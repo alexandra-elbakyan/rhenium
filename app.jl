@@ -43,7 +43,7 @@ route("/", method = POST) do
    query = postpayload(:query)
    qvector = vec(getvector("", query))
    embedding = Pgvector.convert(qvector)
-   result = LibPQ.execute(datac, "SELECT id, title, year, abstract FROM arxiv ORDER BY embedding <-> \$1 LIMIT 32", [embedding])
+   result = LibPQ.execute(datac, "SELECT id, title, year, abstract FROM arxiv ORDER BY embedding <=> \$1 LIMIT 32", [embedding])
    results = rowtable(result)
    html(path"app.jl.html", query = query, results = results)
 end
