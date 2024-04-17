@@ -1,0 +1,35 @@
+<html>
+<body>
+
+	<style type = "text/css">
+		a {text-decoration:none; color: darkcyan;font-size: 18px;}
+		a:hover {background-color: darkcyan;color: white;}
+	</style>
+
+    <div id = "top" style = "margin-top:32px; display: flex;flex-direction: row;align-items: center;width:100%;justify-content: left;flex-grow: 1;">
+	    <img src = "/static/img/re.jpg" style = "width: 128px; height: auto">
+	    <span style = "font-size: 64px; font-family:monospace;color:black;font-weight:bold">search</span>
+	  
+	  
+	    <div class="container" style="margin-left: 16px;margin-top:32px; flex-basis: 23%; flex-grow: 1;">
+		<form method = "POST" action = "/"><input name = "query" value = "$(query)" autofocus style = "outline:none;border:0;border-bottom:solid 1px #aaa; width:100%;text-align:center;font-size:18px;font-family:monospace" placeholder="enter search query and press Enter" /></form>
+	    </div>	
+    
+    </div>
+    
+    
+    <div id = "results" style = "margin: 64px 0 0 64px; max-width: 1200px; font-size: 16px; font-family: monospace; color: black">
+        <% if (!isempty(query)) %>
+    	    <p>Results for: <b>$(query)</b></p>
+		<% end %>
+		<% for_each(results) do result %>
+			<p style = "margin-top: 32px">
+				<a target = "_blank"
+				   href = "//arxiv.org/abs/$(result.id)">$(result.title)</a> ($(result.year))<br>
+			$(result.abstract)</p>
+		<% end %>
+    </div>
+    
+
+</body>
+</html>
