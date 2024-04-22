@@ -11,9 +11,9 @@ datac = LibPQ.Connection("dbname=science host=localhost user=researchers passwor
 
 println("connected to databases.")
 
-module Pgvector
-    convert(v::AbstractVector{T}) where T<:Real = string("[", join(v, ","), "]")
-end
+#module Pgvector
+#    convert(v::AbstractVector{T}) where T<:Real = string("[", join(v, ","), "]")
+#end
 
 function wordvector(word, N)
     global redis
@@ -67,7 +67,7 @@ route("/", method = POST) do
    query = postpayload(:query)
    qvector = vec(getvector("", query))
 #   embedding = Pgvector.convert(qvector)
-   results = py"runquery"(embedding)
+   results = py"runquery"(qvector)
    ids = join([p.i for p in results], ", ")
    # result = LibPQ.execute(datac, "SELECT id, title, year, abstract FROM arxiv ORDER BY embedding <=> \$1 LIMIT 32", [embedding])
    result = LibPQ.execute(datac, "SELECT id, title, year, abstract FROM arxiv WHERE i IN (" * ids * ")")
