@@ -77,8 +77,8 @@ route("/", method = POST) do
    result = LibPQ.execute(datac, "SELECT i, id, title, year, abstract FROM arxiv WHERE i IN (" * ids * ")")
    results = rowtable(result)
 
-   metadata = Dict([p.i => (p.id, p.title, p.abstract) for p in results])
-   metadata = [hcat([score], metadata[i]) for (i, score) in scores]
+   metadata = Dict([p.i => (p.id, p.title, p.year, p.abstract) for p in results])
+   metadata = [[score, metadata[i]...] for (i, score) in scores]
 
    html(path"app.jl.html", query = query, results = metadata)
 end
