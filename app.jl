@@ -66,7 +66,7 @@ end
 route("/", method = POST) do
    query = postpayload(:query)
    qvector = vec(getvector("", query))
-   embedding = Pgvector.convert(qvector)
+#   embedding = Pgvector.convert(qvector)
    results = py"runquery"(embedding)
    ids = join([p.i for p in results], ", ")
    # result = LibPQ.execute(datac, "SELECT id, title, year, abstract FROM arxiv ORDER BY embedding <=> \$1 LIMIT 32", [embedding])
