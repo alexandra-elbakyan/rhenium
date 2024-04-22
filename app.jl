@@ -70,15 +70,15 @@ route("/", method = POST) do
    results = py"runquery"(qvector)
    
    ids = join([p.i for p in results], ", ")
-   scores = Dict(p.i => p.score for p in results)
-   scores = Dict(sort(collect(scores), by = i -> i[2]))
+   scores = Dict(parse(Int, p.i) => parse(Float32, p.score) for p in results)
+   scores = sort(collect(scores), by = i -> i[2])
 
    # result = LibPQ.execute(datac, "SELECT id, title, year, abstract FROM arxiv ORDER BY embedding <=> \$1 LIMIT 32", [embedding])
    result = LibPQ.execute(datac, "SELECT i, id, title, year, abstract FROM arxiv WHERE i IN (" * ids * ")")
    results = rowtable(result)
 
-   metadata = Dict([p.i => (p.id, p.title, p.year, p.abstract, scores[string(p.i)]) for p in results])
-   metadata = [metadata[parse(Int, i)] for i in keys(scores)]
+   metadata = Dict([p.i => (p.id, p.title, p.abstract) for p in results])
+   metadata = [hcat([score], metadata[i]) for (i, score) in scores]
 
    html(path"app.jl.html", query = query, results = metadata)
 end
