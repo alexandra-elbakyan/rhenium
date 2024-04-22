@@ -71,7 +71,7 @@ route("/", method = POST) do
    
    ids = join([p.i for p in results], ", ")
    scores = Dict(p.i => p.score for p in results)
-   scores = sort(collect(scores), by = i -> i[2])
+   scores = Dict(sort(collect(scores), by = i -> i[2]))
 
    # result = LibPQ.execute(datac, "SELECT id, title, year, abstract FROM arxiv ORDER BY embedding <=> \$1 LIMIT 32", [embedding])
    result = LibPQ.execute(datac, "SELECT i, id, title, year, abstract FROM arxiv WHERE i IN (" * ids * ")")
