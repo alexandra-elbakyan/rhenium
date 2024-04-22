@@ -46,7 +46,7 @@ def runquery(vector):
     query = (
         Query("(*)=>[KNN 10000 @embedding $vector AS score]")
         .sort_by("score")
-        .paging(8000, 32)
+        .paging(0, 32)
         .return_fields("score", "i")
         .dialect(2)
     )
