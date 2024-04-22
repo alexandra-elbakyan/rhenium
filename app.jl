@@ -68,11 +68,19 @@ route("/", method = POST) do
    qvector = vec(getvector("", query))
 #   embedding = Pgvector.convert(qvector)
    results = py"runquery"(qvector)
+   
    ids = join([p.i for p in results], ", ")
+   scores = Dict(p.i => p.score for p in results)
+   scores = sort(collect(scores), by = i -> i[2])
+
    # result = LibPQ.execute(datac, "SELECT id, title, year, abstract FROM arxiv ORDER BY embedding <=> \$1 LIMIT 32", [embedding])
    result = LibPQ.execute(datac, "SELECT id, title, year, abstract FROM arxiv WHERE i IN (" * ids * ")")
    results = rowtable(result)
-   html(path"app.jl.html", query = query, results = results)
+
+   metadata = [p.i => (p.id, p.title, p.year, p.abstract, scores[string(p.i)]) for p in results]
+   metadata = values(Dict(sort(collect(metadata), by = i -> i[2][4])))
+
+   html(path"app.jl.html", query = query, results = metadata)
 end
 
 
