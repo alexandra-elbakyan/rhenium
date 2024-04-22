@@ -78,7 +78,7 @@ route("/", method = POST) do
    results = rowtable(result)
 
    metadata = [p.i => (p.id, p.title, p.year, p.abstract, scores[string(p.i)]) for p in results]
-   metadata = values(Dict(sort(collect(metadata), by = i -> i[2][4])))
+   metadata = values(Dict(sort(collect(metadata), by = i -> i[2][5])))
 
    html(path"app.jl.html", query = query, results = metadata)
 end
