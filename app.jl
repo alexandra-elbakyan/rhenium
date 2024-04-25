@@ -10,7 +10,7 @@ using PyCall
 
 import Genie.Renderer.Json: json
 
-redis = Client(host = "localhost", port = 6379)
+redis = Client(host = "127.0.0.1", port = 6379)
 datac = LibPQ.Connection("dbname=science host=localhost user=researchers password=KRASLApQ6QjE6hX6ff")
 
 println("connected to databases.")
