@@ -1,38 +1,103 @@
 <html>
 	<header>
 		<title>[RE]search</title>
-		<link rel="icon" href="/static/img/re.ico" />
+		<link rel="icon" href="/img/re.ico" />
 	</header>
 <body>
 
 	<style type = "text/css">
-		a {text-decoration:none; color: darkcyan;font-size: 18px;}
-		a:hover {background-color: darkcyan;color: white;}
+		a {text-decoration:none; color: olive;font-size: 18px;}
+		a:hover {background-color: #f6909d;color: white;border-radius: 4px;}
+
+		#content {align-self: center; min-width: 600px; max-width: 1024px;}
+		#query {outline:none;border:0;border-bottom:dashed 4px #aaa; width:100%;text-align:center;font-size:18px;font-family:monospace}
+
+		input[type=button] { margin-top: 24px; background-color: #ccc; border: solid 1px #fff; border-radius: 4px; font-size: 16px; padding: 8px; cursor: pointer; font-family: monospace ;}
+		input[type=button]:hover { background-color: #f6909d; }
+
+		.result {margin-top: 32px; display: block}
+		.result p {text-align: justify; margin-top: 4px;}
 	</style>
 
-    <div id = "top" style = "margin-top:32px; display: flex;flex-direction: row;align-items: center;width:100%;justify-content: left;flex-grow: 1;">
-	    <img src = "/static/img/re.jpg" style = "width: 128px; height: auto">
-	    <span style = "font-size: 64px; font-family:monospace;color:black;font-weight:bold">search</span>
-	  
-	  
-	    <div class="container" style="margin-left: 16px;margin-top:32px; flex-basis: 23%; flex-grow: 1;">
-		<form method = "POST" action = "/"><input name = "query" value = "$(query)" autofocus style = "outline:none;border:0;border-bottom:solid 1px #aaa; width:100%;text-align:center;font-size:18px;font-family:monospace" placeholder="enter search query and press Enter" /></form>
-	    </div>	
-    
-    </div>
-    
-    
-    <div id = "results" style = "margin: 64px 0 0 64px; max-width: 1200px; font-size: 16px; font-family: monospace; color: black">
-        <% if (!isempty(query)) %>
-    	    <p>Results for: <b>$(query)</b></p>
-		<% end %>
-		<% for_each(results) do result %>
-			<p style = "margin-top: 32px">
-				<a target = "_blank"
-				   href = "//arxiv.org/abs/$(result[2])">$(result[3])</a> ($(result[4])) $(round(Float64(1-result[1]), sigdigits = 8))<br>
-			$(result[5])</p>
-		<% end %>
-    </div>
+
+	<script>
+
+		var search = function(model) {
+			var query = document.getElementById('query').value;
+			redirect = query;
+			window.location.href = model + '/' + redirect;
+			return false;
+		};
+
+		const plusResult = (data) => {
+			const result = document.createElement("div");
+			result.className = "result";
+			result.innerHTML = '<a target = "_blank" href = "//arxiv.org/abs/' + data.id + '">' + data.title + "</a>";
+			document.getElementById("results").appendChild(result);
+			result.insertAdjacentHTML("beforeend", " (" + data.year + ") " + (1 - data.score).toFixed(4) + "<p>" + data.abstract + "</p>");
+			index = index + 1;
+		};
+
+		var index = $(count);
+
+		const handleInfiniteScroll = () => {
+			const endOfPage = window.innerHeight + window.pageYOffset >= document.body.offsetHeight;
+			if (endOfPage) {
+				var xmlhttp = new XMLHttpRequest();
+				xmlhttp.open('GET', '/scroll/$(model)/$(query)/' + index, true);
+				xmlhttp.onreadystatechange = function() {
+					if (xmlhttp.readyState == 4) {
+						if(xmlhttp.status == 200) {
+							var results = JSON.parse(xmlhttp.responseText);
+							results.forEach(plusResult);
+						}
+					}
+				};
+				xmlhttp.send(null);
+			}
+		};
+
+		window.onload = function () {
+			window.addEventListener("scroll", handleInfiniteScroll);
+		};
+
+
+	</script>
+
+
+	<div style = "width: 100%; display: flex; flex-direction: column;">
+	<div id = "content">
+
+		<div id = "top" style = "margin-top:32px; width: 100%; display: flex; align-items: center; justify-content: left;flex-grow: 1;">
+			<img src = "/img/re.jpg" style = "width: 128px; height: auto">
+			<span style = "font-size: 64px; font-family:monospace;color:black;font-weight:bold">search</span>
+		
+			<div class="container" style="margin-left: 16px;margin-top:32px; flex-basis: 23%; flex-grow: 1; text-align: center;">
+				<form method = "POST" action = "/" onsubmit = "return search('word2vec');">
+					<input name = "query" id = "query" value = "$(query)" autofocus placeholder="enter search query and press Enter" /><br>
+					<input type = "button" value = "word2vec" onclick = "search('word2vec')"><input type = "button" value = "gte-large-en-v1.5" onclick = "search('gte-large-en-v1.5')">
+				</form>
+			</div>	
+		
+		</div>
+		
+		
+		<div id = "results" style = "margin-top: 64px; width: 100%; font-size: 16px; font-family: monospace; color: black">
+			<% if (!isempty(query)) %>
+				<p>results for: <b>$(query)</b><br>
+				   embedding model: $(model)<br>
+				   retrieval took $(round(time, digits = 4)) sec.
+				</p>
+			<% end %>
+			<% for_each(results) do result %>
+				<div class = "result">
+					<a target = "_blank" href = "//arxiv.org/abs/$(result.id)">$(result.title)</a> ($(result.year)) $(round(1-result.score; digits = 4))
+					<p>$(result.abstract)</p>
+			</div>
+			<% end %>
+		</div>
+	
+	</div></div>
     
 
 </body>
