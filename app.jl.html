@@ -29,12 +29,20 @@
 			return false;
 		};
 
+		function wordtrim(abstract, n = 64) {
+			var words = abstract.split(' ')
+			if (words.length > n) {
+			    return words.slice(0, n).join(' ') + '...';
+			}
+			return abstract;
+		}
+
 		const plusResult = (data) => {
 			const result = document.createElement("div");
 			result.className = "result";
 			result.innerHTML = '<a target = "_blank" href = "//arxiv.org/abs/' + data.id + '">' + data.title + "</a>";
 			document.getElementById("results").appendChild(result);
-			result.insertAdjacentHTML("beforeend", " (" + data.year + ") " + (1 - data.score).toFixed(4) + "<p>" + data.abstract + "</p>");
+			result.insertAdjacentHTML("beforeend", " (" + data.year + ") " + (1 - data.score).toFixed(4) + "<p>" + wordtrim(data.abstract) + "</p>");
 			index = index + 1;
 		};
 
@@ -90,9 +98,17 @@
 				</p>
 			<% end %>
 			<% for_each(results) do result %>
+			<% function wordtrim(abstract, n = 64)
+			       words = split(abstract, " ")
+				   if length(words) > n
+				       return join(words[1:n], " ") * "..."
+				   end
+				   abstract
+			   end
+			%>
 				<div class = "result">
 					<a target = "_blank" href = "//arxiv.org/abs/$(result.id)">$(result.title)</a> ($(result.year)) $(round(1-result.score; digits = 4))
-					<p>$(result.abstract)</p>
+					<p>$(wordtrim(result.abstract))</p>
 			</div>
 			<% end %>
 		</div>

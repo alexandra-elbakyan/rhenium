@@ -75,7 +75,7 @@ end
 
 
 route("/", method = GET) do
-   html(path"app.jl.html", results = "", query = "")
+   html(path"app.jl.html", results = "", query = "", count = 0)
 end
 
 route("/:model/:query", method = GET) do
