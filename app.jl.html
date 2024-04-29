@@ -81,7 +81,7 @@
 			<span style = "font-size: 64px; font-family:monospace;color:black;font-weight:bold">search</span>
 		
 			<div class="container" style="margin-left: 16px;margin-top:32px; flex-basis: 23%; flex-grow: 1; text-align: center;">
-				<form method = "POST" action = "/" onsubmit = "return search('word2vec');">
+				<form method = "POST" action = "/" onsubmit = "return search('$(model)');">
 					<input name = "query" id = "query" value = "$(query)" autofocus placeholder="enter search query and press Enter" /><br>
 					<input type = "button" value = "word2vec" onclick = "search('word2vec')"><input type = "button" value = "gte-large-en-v1.5" onclick = "search('gte-large-en-v1.5')">
 				</form>
