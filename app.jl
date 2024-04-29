@@ -11,10 +11,28 @@ using PyCall
 import Genie.Renderer.Json: json
 
 redis = Client(host = "127.0.0.1", port = 6379)
-datac = LibPQ.Connection("dbname=science host=localhost user=researchers password=KRASLApQ6QjE6hX6ff")
+pqsql = LibPQ.Connection("dbname=science host=localhost user=researchers password=KRASLApQ6QjE6hX6ff")
 
 println("connected to databases.")
 
+
+py"""
+def sentenceTrans(path):
+    from sentence_transformers import SentenceTransformer
+    return SentenceTransformer(path, trust_remote_code = True, device = "cuda")
+"""
+
+gtemodel = py"sentenceTrans"("Alibaba-NLP/gte-large-en-v1.5")
+
+println("language models loaded.")
+
+
+function gtelarge(query)
+
+    global gtemodel
+    return gtemodel.encode(query)
+
+end
 
 function word2vec(query)
 
@@ -61,15 +79,21 @@ def runquery(vector, model, start, N):
 """
 
 function search(query, model, start = 0, N = 32)
-    global datac
-    if model in ["word2vec", "gte-large-en-v1.5"]
-        vector = getfield(Science, Symbol(model))(query)
+    global pqsql
+
+    models = Dict("word2vec"          => :word2vec,
+                  "gte-large-en-v1.5" => :gtelarge)
+
+    if model in keys(models)
+        model = models[model]
+        vector = getfield(Science, model)(query)
         results = py"runquery"(vector, model, start, N)
         records = DataFrame([NamedTuple([:i => parse(Int, r.i), :score => parse(Float32, r.score)])  for r in results])
-        result = LibPQ.execute(datac, "SELECT i, id, title, year, abstract FROM arxiv WHERE i IN (" * join([p.i for p in results], ", ") * ")")
+        result = LibPQ.execute(pqsql, "SELECT i, id, title, year, abstract FROM arxiv WHERE i IN (" * join([p.i for p in results], ", ") * ")")
         results = DataFrame(columntable(result))
         results = leftjoin(results, records, on = [:i])
         [NamedTuple(result) for result in eachrow(results)]
+    
     end
 end
 
@@ -90,6 +114,10 @@ route("/scroll/:model/:query/:start", method = GET) do
     query = payload(:query)
     start = payload(:start)
     search(query, model, start) |> json
+end
+
+route("/favicon.ico") do 
+    redirect("/img/re.ico")
 end
 
 Server.up(1234)
