@@ -96,10 +96,10 @@ function answer(question)
     response = py"answer"(tokenizer, model, question)
     response = chop(response, head = 4, tail = 4)
     if occursin("INST", response)
-        response = response.split("INST")[1]
+        response = split(response, "INST")[1]
     end
     response = split(response, ".")
-    join(response[1:length(response)-1], ".")
+    join(response[1:length(response)-1], ".") * "..."
 end
 
 function search(query, model, start = 0, N = 32)
