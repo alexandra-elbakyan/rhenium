@@ -21,6 +21,8 @@
 
 		.result {margin-top: 32px; display: block}
 		.result p {text-align: justify; margin-top: 4px;}
+
+		#answer {align-self: center; min-width: 800px; max-width: 1024px; border: dashed 4px #ccc; padding: 12px; border-radius: 8px}
 	</style>
 
 
@@ -39,6 +41,21 @@
 			    return words.slice(0, n).join(' ') + '...';
 			}
 			return abstract;
+		}
+
+
+		function ask(question) {
+			var xmlhttp = new XMLHttpRequest();
+			xmlhttp.open('GET', '/answer/' + encodeURI(question), true);
+			xmlhttp.onreadystatechange = function() {
+				if (xmlhttp.readyState == 4) {
+					if(xmlhttp.status == 200) {
+						var answer = xmlhttp.responseText;
+						document.getElementById("answer").innerHTML = '<p>' + answer.replace(/(?:\r\n|\r|\n)/g, '</p><p>') + '</p>';
+					}
+				}
+			};
+			xmlhttp.send(null);
 		}
 
 		const plusResult = (data) => {
@@ -71,6 +88,10 @@
 
 		window.onload = function () {
 			window.addEventListener("scroll", handleInfiniteScroll);
+			query = '$(query)';
+			if (query.slice(-1) == '?') {
+				ask(query);
+			}
 		};
 
 
@@ -93,6 +114,9 @@
 		
 		</div>
 		
+		<div id = "answer">
+
+		</div>
 		
 		<div id = "results">
 			<% if (!isempty(query)) %>

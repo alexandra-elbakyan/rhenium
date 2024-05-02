@@ -136,7 +136,7 @@ end
 
 route("/answer/:question", method = GET) do
     question = payload(:question)
-    answer(question) |> json
+    answer(question)
 end
 
 route("/favicon.ico") do 
