@@ -22,7 +22,7 @@
 		.result {margin-top: 32px; display: block}
 		.result p {text-align: justify; margin-top: 4px;}
 
-		#answer {align-self: center; min-width: 800px; max-width: 1024px; margin-top: 16px}
+		#answer {align-self: center; margin-top: 16px; font-family: monospace; font-size: 14px; padding: 16px; border: dashed 2px #ccc; border-radius: 8px; display: none}
 	</style>
 
 
@@ -50,7 +50,9 @@
 				if (xmlhttp.readyState == 4) {
 					if(xmlhttp.status == 200) {
 						var answer = xmlhttp.responseText;
-						document.getElementById("answer").innerHTML = '<p>' + answer.split("\\n").join('</p><p>') + '</p>';
+						diva = document.getElementById("answer");
+						diva.innerHTML = '<p>' + answer.split("\\n").join('</p><p>') + '</p>';
+						diva.style.display = 'block';
 					}
 				}
 			};
@@ -113,16 +115,13 @@
 		
 		</div>
 		
-		<div id = "answer">
-
-		</div>
-		
 		<div id = "results">
 			<% if (!isempty(query)) %>
 				<p>results for: <b>$(query)</b><br>
 				   embedding model: $(model)<br>
 				   retrieval took $(round(time, digits = 4)) sec.
 				</p>
+				<div id = "answer"></div>		
 			<% end %>
 			<% for_each(results) do result %>
 			<% function wordtrim(abstract, n = 64)
