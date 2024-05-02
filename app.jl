@@ -95,7 +95,7 @@ function answer(question)
     tokenizer, model = expmodel
     response = py"answer"(tokenizer, model, question)
     response = chop(response, head = 4, tail = 4)
-    if "INST" in response
+    if occursin("INST", response)
         response = response.split("INST")[1]
     end
     response = split(response, ".")
