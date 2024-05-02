@@ -30,8 +30,7 @@
 
 		var search = function(model) {
 			var query = document.getElementById('query').value;
-			redirect = query;
-			window.location.href = '/' + model + '/' + redirect;
+			window.location.href = '/' + model + '/' + query.replace('?', '？');
 			return false;
 		};
 
@@ -46,7 +45,7 @@
 
 		function ask(question) {
 			var xmlhttp = new XMLHttpRequest();
-			xmlhttp.open('GET', '/answer/' + encodeURI(question), true);
+			xmlhttp.open('GET', '/answer/' + question.replace('?', '？'), true);
 			xmlhttp.onreadystatechange = function() {
 				if (xmlhttp.readyState == 4) {
 					if(xmlhttp.status == 200) {
@@ -73,7 +72,7 @@
 			const endOfPage = window.innerHeight + window.pageYOffset >= document.body.offsetHeight;
 			if (endOfPage) {
 				var xmlhttp = new XMLHttpRequest();
-				xmlhttp.open('GET', '/scroll/$(model)/$(query)/' + index, true);
+				xmlhttp.open('GET', '/scroll/$(model)/$(query)/'.replace('?', '？') + index, true);
 				xmlhttp.onreadystatechange = function() {
 					if (xmlhttp.readyState == 4) {
 						if(xmlhttp.status == 200) {
