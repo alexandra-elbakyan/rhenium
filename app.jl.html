@@ -51,7 +51,7 @@
 				if (xmlhttp.readyState == 4) {
 					if(xmlhttp.status == 200) {
 						var answer = xmlhttp.responseText;
-						document.getElementById("answer").innerHTML = '<p>' + answer.replace(/(?:\r\n|\r|\n)/g, '</p><p>') + '</p>';
+						document.getElementById("answer").innerHTML = '<p>' + answer.split("\n").join('</p><p>') + '</p>';
 					}
 				}
 			};
