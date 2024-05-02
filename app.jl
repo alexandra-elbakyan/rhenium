@@ -123,7 +123,7 @@ end
 route("/:model/:query", method = GET) do
    model = payload(:model)
    query = payload(:query)
-   query = replace(query, '？', '?')
+   query = replace(query, '？' => '?')
    elapsed = @elapsed results = search(query, model)
    html(path"app.jl.html", query = query, results = results, model = model, count = length(results), time = elapsed)
 end
@@ -132,13 +132,13 @@ route("/scroll/:model/:query/:start", method = GET) do
     model = payload(:model)
     query = payload(:query)
     start = payload(:start)
-    query = replace(query, '？', '?')
+    query = replace(query, '？' => '?')
     search(query, model, start) |> json
 end
 
 route("/answer/:question", method = GET) do
     question = payload(:question)
-    question = replace(question, '？', '?')
+    question = replace(question, '？' => '?')
     answer(question)
 end
 
