@@ -22,7 +22,7 @@
 		.result {margin-top: 32px; display: block}
 		.result p {text-align: justify; margin-top: 4px;}
 
-		#answer {align-self: center; min-width: 800px; max-width: 1024px; border: dashed 4px #ccc; padding: 12px; border-radius: 8px}
+		#answer {align-self: center; min-width: 800px; max-width: 1024px; margin-top: 16px}
 	</style>
 
 
@@ -51,7 +51,7 @@
 				if (xmlhttp.readyState == 4) {
 					if(xmlhttp.status == 200) {
 						var answer = xmlhttp.responseText;
-						document.getElementById("answer").innerHTML = '<p>' + answer.split("\n").join('</p><p>') + '</p>';
+						document.getElementById("answer").innerHTML = '<p>' + answer.split("\\n").join('</p><p>') + '</p>';
 					}
 				}
 			};
