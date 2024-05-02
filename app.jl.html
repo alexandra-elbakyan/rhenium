@@ -9,8 +9,12 @@
 		a {text-decoration:none; color: olive;font-size: 18px;}
 		a:hover {background-color: #f6909d;color: white;border-radius: 4px;}
 
+		#top {margin-top:32px; width: 100%; display: flex; align-items: center; justify-content: left;flex-grow: 1}
+		#logo {font-size: 64px; font-family:monospace;color:black;font-weight:bold}
+		#form {margin-left: 16px;margin-top:32px; flex-basis: 23%; flex-grow: 1; text-align: center;}
 		#content {align-self: center; min-width: 800px; max-width: 1024px;}
 		#query {outline:none;border:0;border-bottom:dashed 4px #aaa; width:100%;text-align:center;font-size:18px;font-family:monospace}
+		#results {margin-top: 64px; width: 100%; font-size: 16px; font-family: monospace; color: black}
 
 		input[type=button] { margin-top: 24px; background-color: #ccc; border: solid 1px #fff; border-radius: 4px; font-size: 16px; padding: 8px; cursor: pointer; font-family: monospace ;}
 		input[type=button]:hover { background-color: #f6909d; }
@@ -76,11 +80,11 @@
 	<div style = "width: 100%; display: flex; flex-direction: column;">
 	<div id = "content">
 
-		<div id = "top" style = "margin-top:32px; width: 100%; display: flex; align-items: center; justify-content: left;flex-grow: 1;">
+		<div id = "top">
 			<img src = "/img/re.jpg" style = "width: 128px; height: auto">
-			<span style = "font-size: 64px; font-family:monospace;color:black;font-weight:bold">search</span>
+			<span id = "logo">search</span>
 		
-			<div class="container" style="margin-left: 16px;margin-top:32px; flex-basis: 23%; flex-grow: 1; text-align: center;">
+			<div id="form">
 				<form method = "POST" action = "/" onsubmit = "return search('$(model)');">
 					<input name = "query" id = "query" value = "$(query)" autofocus placeholder="enter search query and press Enter" /><br>
 					<input type = "button" value = "word2vec" onclick = "search('word2vec')"><input type = "button" value = "gte-large-en-v1.5" onclick = "search('gte-large-en-v1.5')">
@@ -90,7 +94,7 @@
 		</div>
 		
 		
-		<div id = "results" style = "margin-top: 64px; width: 100%; font-size: 16px; font-family: monospace; color: black">
+		<div id = "results">
 			<% if (!isempty(query)) %>
 				<p>results for: <b>$(query)</b><br>
 				   embedding model: $(model)<br>

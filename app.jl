@@ -20,9 +20,16 @@ py"""
 def sentenceTrans(path):
     from sentence_transformers import SentenceTransformer
     return SentenceTransformer(path, trust_remote_code = True, device = "cuda")
+
+def generator(path):
+    from transformers import AutoTokenizer, AutoModelForCausalLM
+    tokenizer = AutoTokenizer.from_pretrained(path)
+    model = AutoModelForCausalLM.from_pretrained(path).to("cuda")
+    return tokenizer, model
 """
 
 gtemodel = py"sentenceTrans"("Alibaba-NLP/gte-large-en-v1.5")
+expmodel = py"generator"("yam-peleg/Experiment21-7B")
 
 println("language models loaded.")
 
@@ -56,7 +63,6 @@ function word2vec(query)
 end
 
 
-
 py"""
 
 import redis
@@ -76,7 +82,19 @@ def runquery(vector, model, start, N):
     result = client.ft(model).search(query, {"vector": bytes})
     return result.docs
 
+def answer(tokenizer, model, question):
+    inputs = tokenizer(question, return_tensors = "pt", return_attention_mask = False).to("cuda")
+    outputs = model.generate(**inputs, max_length = 1024)
+    text = tokenizer.batch_decode(outputs)[0]
+    return text
+
 """
+
+function answer(question)
+    global expmodel
+    tokenizer, model = expmodel
+    py"answer"(tokenizer, model, question)
+end
 
 function search(query, model, start = 0, N = 32)
     global pqsql
@@ -114,6 +132,11 @@ route("/scroll/:model/:query/:start", method = GET) do
     query = payload(:query)
     start = payload(:start)
     search(query, model, start) |> json
+end
+
+route("/answer/:question", method = GET) do
+    question = payload(:question)
+    answer(question) |> json
 end
 
 route("/favicon.ico") do 
