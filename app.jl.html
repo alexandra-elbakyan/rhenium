@@ -117,11 +117,13 @@
 		
 		<div id = "results">
 			<% if (!isempty(query)) %>
-				<p>results for: <b>$(query)</b><br>
-				   embedding model: $(model)<br>
-				   retrieval took $(round(time, digits = 4)) sec.
-				</p>
-				<div id = "answer"></div>		
+				<div>
+					<div>results for: <b>$(query)</b><br>
+					embedding model: $(model)<br>
+					retrieval took $(round(time, digits = 4)) sec.
+					</div>
+					<div id = "answer"></div>
+				</div>
 			<% end %>
 			<% for_each(results) do result %>
 			<% function wordtrim(abstract, n = 64)
@@ -135,7 +137,7 @@
 				<div class = "result">
 					<a target = "_blank" href = "//arxiv.org/abs/$(result.id)">$(result.title)</a> ($(result.year)) $(round(1-result.score; digits = 4))
 					<p>$(wordtrim(result.abstract))</p>
-			</div>
+				</div>
 			<% end %>
 		</div>
 	
