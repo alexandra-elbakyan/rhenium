@@ -84,7 +84,7 @@ def runquery(vector, model, start, N):
 
 def answer(tokenizer, model, question):
     inputs = tokenizer(question, return_tensors = "pt", return_attention_mask = False).to("cuda")
-    outputs = model.generate(**inputs, max_length = 1024)
+    outputs = model.generate(**inputs, max_length = 256, pad_token_id = 100)
     text = tokenizer.batch_decode(outputs)[0]
     return text
 
@@ -93,7 +93,13 @@ def answer(tokenizer, model, question):
 function answer(question)
     global expmodel
     tokenizer, model = expmodel
-    py"answer"(tokenizer, model, question)
+    response = py"answer"(tokenizer, model, question)
+    response = chop(response, head = 4, tail = 4)
+    if "INST" in response
+        response = response.split("INST")[1]
+    end
+    response = split(response, ".")
+    join(response[1:length(response)-1], ".")
 end
 
 function search(query, model, start = 0, N = 32)
@@ -117,7 +123,7 @@ end
 
 
 route("/", method = GET) do
-   html(path"app.jl.html", results = "", query = "", count = 0)
+   html(path"app.jl.html", results = "", query = "", model = "word2vec", count = 0)
 end
 
 route("/:model/:query", method = GET) do
