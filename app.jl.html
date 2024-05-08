@@ -6,31 +6,89 @@
 <body>
 
 	<style type = "text/css">
+		body {margin:0}
+
 		a {text-decoration:none; color: olive;font-size: 18px;}
 		a:hover {background-color: #f6909d;color: white;border-radius: 4px;}
 
 		#top {margin-top:32px; width: 100%; display: flex; align-items: center; justify-content: left;flex-grow: 1}
 		#logo {font-size: 64px; font-family:monospace;color:black;font-weight:bold}
 		#form {margin-left: 16px;margin-top:32px; flex-basis: 23%; flex-grow: 1; text-align: center;}
-		#content {align-self: center; min-width: 800px; max-width: 1024px;}
-		#query {outline:none;border:0;border-bottom:dashed 4px #aaa; width:100%;text-align:center;font-size:18px;font-family:monospace}
+		#content-wrapper {margin-left: 200px; display: flex; flex-direction: column;}
+		#content {align-self: center; min-width: 800px; max-width: 1024px; margin: 0 16px 0 16px;}
+		#query {outline:none;border:0;border-bottom:dashed 4px #aaa; width: 80%;text-align:center;font-size:18px;font-family:monospace}
 		#results {margin-top: 64px; width: 100%; font-size: 16px; font-family: monospace; color: black}
 
-		input[type=button] { margin-top: 24px; background-color: #ccc; border: solid 1px #fff; border-radius: 4px; font-size: 16px; padding: 8px; cursor: pointer; font-family: monospace ;}
-		input[type=button]:hover { background-color: #f6909d; }
+		#pager {position: fixed; top: 11%; right: 2%; max-width: 36px; display: none; background: whitesmoke; border-radius: 8px; padding: 12px; padding-right: 24px;}
+		#pager a {color: #aaa; background: white; font-size: 12px; border-radius: 2px; width: 32px; height: 32px; line-height: 32px; display: block; text-align: center; margin-top: 8px; border: dotted 1px #aaa; font-family: monospace;}
+		#pager a.current { background-color: olive; border: white; color: white; font-size: 14px; font-weight: bold; line-height: 48px; width: 44px; height: 44px; }
+		#pager a:hover {background-color:cadetblue; color: white; font-weight: bold; border-color: cadetblue;}
 
-		.result {margin-top: 32px; display: block}
+		input[type=button] { background-color: #ccc; border: solid 1px #fff; border-radius: 50%; font-size: 32px; padding: 8px 16px 8px 16px; cursor: pointer; font-family: monospace; color: #888}
+		input[type=button]:hover { background-color: #f6909d; color:black; }
+
+		.result {margin-top: 32px; display: table}
+		.result span {display: table-cell;}
 		.result p {text-align: justify; margin-top: 4px;}
+		.result span.author {display: block;font-size: 12px;padding-bottom: 4px;color:#444}
+		.result .score {font-size: 10px; margin-top: 12px; color: #aaa}
+		.result .i {display:table-cell; text-align: rihgt; padding-right: 12px; vertical-align: top; font-weight: bold; font-size: 24px; color: #aaa}
 
 		#answer {align-self: center; margin-top: 16px; font-family: monospace; font-size: 14px; padding: 16px; border: dashed 2px #ccc; border-radius: 8px; display: none}
+
+		#settings {position: fixed; height: 100%; background: #aaa; width: 192px; color: black; margin: 0 2% 0 0;}
+		#settings div {margin: 8px 24px 0 24px;}
+		#settings div:first-of-type {font-family: monospace; font-size: 24px; color: black; padding-bottom: 20px; margin-top: 24px}
+		#settings div:first-of-type img {max-width: 22%;}
+		#settings span {font-family: monospace; font-size: 12px}
+		#settings button {margin-top: 8px; cursor: pointer; font-family: monospace; font-size: 12px; background: #bbb; padding: 4px; border: solid 1px #aaa; color: #444; border-radius: 4px;}
+		#settings button.selected {background: white; font-weight: bold; cursor: default;}
+		#settings button:hover {background-color: darkcyan; color:white}
+		#settings button:hover.selected {background: white; color:#444}
+		#settings input[type=checkbox] + label { font-family: monospace; cursor: hand }
+		#settings input.year { font-family: monospace; font-size: 12px; width: 32px; text-align: center; }
+
+		#loading {width:100%; text-align: center; display: none; color: #aaa; font-size: 24px; font-family: monospace; margin-top: 18px; padding-bottom: 24px;}
+		#loading img {max-width: 128px;}
 	</style>
 
 
 	<script>
 
-		var search = function(model) {
+		var retrieval  = '$(imodel)';
+		var generative = '$(jmodel)';
+
+		function prepare() {
+			var dates = [];
+			var yfr = document.getElementById('year:from').value;
+			var yto = document.getElementById('year:to').value;
+			if (yfr != '1974' || yto != '2024') {
+				dates = [yfr, yto];
+			}
 			var query = document.getElementById('query').value;
-			window.location.href = '/' + model + '/' + query.replace('?', '[ask]');
+			var url = '/' + retrieval;
+			var sources = [];
+			var boxes = document.getElementsByName('sources');
+			boxes.forEach(function(b){
+				if (b.checked) {
+					sources.push(b.value);
+				}
+			});
+			if (boxes.length == sources.length)
+				sources = [];
+			if (sources.length > 0) {
+				url += '[' + sources.join(',') + ']';
+			}
+			url += '/' + query.replace('?', '[answer]');
+			if (dates.length > 0) {
+				url += ' [' + dates.join('-') + ']';
+			}
+			return url;
+		}
+
+
+		function search() {
+			window.location.href = prepare();
 			return false;
 		};
 
@@ -45,7 +103,7 @@
 
 		function ask(question) {
 			var xmlhttp = new XMLHttpRequest();
-			xmlhttp.open('GET', '/answer/' + question.replace('?', '[ask]'), true);
+			xmlhttp.open('GET', '/answer/' + question.replace('?', '[answer]'), true);
 			xmlhttp.onreadystatechange = function() {
 				if (xmlhttp.readyState == 4) {
 					if(xmlhttp.status == 200) {
@@ -59,29 +117,90 @@
 			xmlhttp.send(null);
 		}
 
-		const plusResult = (data) => {
-			const result = document.createElement("div");
+		function setmodel(mi) {
+			document.getElementById('button:' + retrieval).classList.remove('selected');
+			retrieval = mi;
+			document.getElementById('button:' + mi).classList.add('selected');
+		}
+
+		var index = $(count);
+		var psize = $(count);
+
+		var pages = [];
+		var loading = false;
+		var pi = null;
+
+		function select(i) {
+			if (pi !== null) {
+				pi.classList.remove('current');
+			}
+			i.classList.add('current');
+			pi = i;
+		}
+
+		const plusResult = (page, data, i) => {
+			result = document.createElement("div");
 			result.className = "result";
 			result.innerHTML = '<a target = "_blank" href = "//arxiv.org/abs/' + data.id + '">' + data.title + "</a>";
-			document.getElementById("results").appendChild(result);
-			result.insertAdjacentHTML("beforeend", " (" + data.year + ") " + (1 - data.score).toFixed(4) + "<p>" + wordtrim(data.abstract) + "</p>");
+			page.appendChild(result);
+			result.insertAdjacentHTML("afterbegin", '<span class = "author">' + data.authors + '</span>');
+			result.insertAdjacentHTML("afterbegin", '<span class = "i">' + (parseInt(page.getAttribute("tag")) + i + 1) + '.<br><span class = "score">' + (1 - data.score).toFixed(4) + '</span></span><span>')
+			result.insertAdjacentHTML("beforeend", " (" + data.year + ")<p>" + wordtrim(data.abstract) + "</p></span>");
 			index = index + 1;
 		};
 
-		var index = $(count);
 
+		function pageScrolledIntoView (page) {
+			var rect = page.getBoundingClientRect();
+			var elemTop = rect.top;
+			var elemBottom = rect.bottom;
+			// Only completely visible elements return true:
+			//var isVisible = (elemTop >= 0) && (elemBottom <= window.innerHeight);
+			// Partially visible elements return true:
+			isVisible = elemTop < window.innerHeight && elemBottom >= 0;
+			if (isVisible) {
+				pid = parseInt(page.getAttribute("tag")) / psize + 1;
+				select(document.getElementById('to:' + pid));
+			}
+		}
+
+		
 		const handleInfiniteScroll = () => {
+
+			pages.forEach(pageScrolledIntoView);
+
 			const endOfPage = window.innerHeight + window.pageYOffset >= document.body.offsetHeight;
-			if (endOfPage) {
+			if (endOfPage && !loading) {
+				loading = true;
+				document.getElementById("loading").style.display = 'block';
 				var xmlhttp = new XMLHttpRequest();
-				xmlhttp.open('GET', '/scroll/$(model)/$(query)/'.replace('?', '[ask]') + index, true);
+				xmlhttp.open('GET', '/scroll/$(request)/' + index, true);
 				xmlhttp.onreadystatechange = function() {
 					if (xmlhttp.readyState == 4) {
 						if(xmlhttp.status == 200) {
-							var results = JSON.parse(xmlhttp.responseText);
-							results.forEach(plusResult);
+							document.getElementById("loading").style.display = 'none';
+
+							page = document.createElement("div");
+							page.className = "page";
+							page.setAttribute("tag", index);
+
+							pid = index / psize + 1;
+							page.id = ":" + pid;
+
+							pages.push(page);
+
+							results = JSON.parse(xmlhttp.responseText);
+							results.forEach(function (data, i) {
+								plusResult(page, data, i)
+							});
+
+							document.getElementById("results").appendChild(page);
+							document.getElementById("pager").style.display = 'block';
+							document.getElementById("pager").insertAdjacentHTML("beforeend", '<a onclick = "select(this)" id = "to:' + pid + '" href = "#:' + pid + '">' + pid + '</a>');
+							select(document.getElementById("to:" + pid))
 						}
 					}
+					loading = false;
 				};
 				xmlhttp.send(null);
 			}
@@ -93,13 +212,50 @@
 			if (query.slice(-1) == '?') {
 				ask(query);
 			}
+			pages.push(document.getElementById(":1"));
 		};
 
 
 	</script>
 
+	<div id = "settings">
+		<div>
+			<img src = "/img/gears.png">settings
+		</div>
 
-	<div style = "width: 100%; display: flex; flex-direction: column;">
+		<div>
+			<span>embedding model used for retrieval</span>
+			<br>			    
+			<%  for_each(values(retrieval)) do model
+				   selected = model.name == imodel ? "class = 'selected'" : ""
+				   "<button id = \"button:" * String(model.name) * "\" onclick = \"setmodel('" * String(model.name) * "')\" " * selected * ">" * model.id * "</button>"
+			    end %>
+		</div>
+		
+		<div>
+			<span>language model to answer questions</span>
+			<br>
+			<button class = "selected">experiment21-7B</button>
+		</div>
+
+		<div>
+			<span>published in</span>
+			<br>
+			<input value = "$(dates[1])" id = "year:from" class = "year"> - <input value = "$(dates[2])" id = "year:to" class = "year">
+		</div>
+
+		<div>
+			<span>databases</span>
+			<br>
+			<%  for_each(keys(sources)) do source
+					checked = sources[source] > 0 ? "checked = 1" : "" ;
+					"<span><input type = \"checkbox\" id = \"source:" * source * "\" value = \"" * source * "\" name = \"sources\" " * checked * " /><label for = \"source:" * source * "\">" * source * "</label></span>"
+			   end %>
+		</div>
+
+	</div>
+
+	<div id = "content-wrapper">
 	<div id = "content">
 
 		<div id = "top">
@@ -107,38 +263,73 @@
 			<span id = "logo">search</span>
 		
 			<div id="form">
-				<form method = "POST" action = "/" onsubmit = "return search('$(model)');">
-					<input name = "query" id = "query" value = "$(query)" autofocus placeholder="enter search query and press Enter" /><br>
-					<input type = "button" value = "word2vec" onclick = "search('word2vec')"><input type = "button" value = "gte-large-en-v1.5" onclick = "search('gte-large-en-v1.5')">
+				<form method = "POST" action = "/" onsubmit = "return search('$(imodel)');">
+					<input name = "query" id = "query" value = "$(query)" autofocus placeholder="enter search query" />
+					<input type = "button" value = "→" onclick = "search()">
 				</form>
 			</div>	
 		
 		</div>
 		
+		<% if (isempty(query))  %>
+		<div id = "main">
+			<h1>Welcome to REsearch engine!</h1>
+			<p>number of articles in the index: $(N)</p>
+		</div>
+		<% end %>
+
 		<div id = "results">
-			<% if (!isempty(query)) %>
-				<div>
+			<% if (!isempty(query)) 
+			     i = 0
+			%>
+			<div>
+				<div id = "stats">
 					<div>results for: <b>$(query)</b><br>
-					embedding model: $(model)<br>
+					embedding model: $(imodel)<br>
 					retrieval took $(round(time, digits = 4)) sec.
 					</div>
 					<div id = "answer"></div>
 				</div>
-			<% end %>
-			<% for_each(results) do result %>
-			<% function wordtrim(abstract, n = 64)
-			       words = split(abstract, " ")
-				   if length(words) > n
-				       return join(words[1:n], " ") * "..."
-				   end
-				   abstract
-			   end
-			%>
-				<div class = "result">
-					<a target = "_blank" href = "//arxiv.org/abs/$(result.id)">$(result.title)</a> ($(result.year)) $(round(1-result.score; digits = 4))
-					<p>$(wordtrim(result.abstract))</p>
+				<div id = "pager">
+					<a onclick = "select(this)" href = "#:1" id = "to:1">1</a>
 				</div>
+			</div>
 			<% end %>
+			<div class = "page" id = ":1" tag = "0">
+				<%
+				for_each(results) do result
+					function wordtrim(abstract, n = 64)
+						words = split(abstract, " ")
+						if length(words) > n
+							return join(words[1:n], " ") * "..."
+						end
+						abstract
+						end
+					
+					function geturl(id, source)
+						if source == "arxiv"
+							"arxiv.org/abs/" * id
+						else
+							"pubmed.ncbi.nlm.nih.gov/" * id
+						end
+					end
+				i = i + 1
+				%>
+					<div class = "result">
+						<span class = "i">
+							$(i).<br><span class = "score">$(round(1-result.score; digits = 4))</span>
+						</span>
+						<span>
+							<span class = "author">$(result.authors)</span>
+							<a target = "_blank" href = "//$(geturl(result.id, result.source))">$(result.title)</a> ($(result.year))
+							<p>$(wordtrim(result.abstract))</p>
+						</span>
+					</div>
+				<% end %>
+			</div>
+		</div>
+		<div id = "loading">
+			<img src = "/img/loading.gif" align = "middle"> loading...
 		</div>
 	
 	</div></div>

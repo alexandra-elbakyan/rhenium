@@ -1,99 +1,74 @@
 module Science
 
+import Genie.Renderer.Json: json
+
 using GenieFramework
 using Genie.Renderer.Html
 using Genie.Requests
-using WordTokenizers, Statistics
-using LibPQ, Tables, Jedis
-using DataFrames
+using LibPQ, Jedis
+using DataFrames, Tables
+using JSON3
+
 using PyCall
+pushfirst!(pyimport("sys")."path", "modules")
+transformer = pyimport("transformer")
+redisearch = pyimport("redisearch")
 
-import Genie.Renderer.Json: json
-
-redis = Client(host = "127.0.0.1", port = 6379)
-pqsql = LibPQ.Connection("dbname=science host=localhost user=researchers password=KRASLApQ6QjE6hX6ff")
-
-println("connected to databases.")
+include("modules/word2vec.jl")
 
 
-py"""
-def sentenceTrans(path):
-    from sentence_transformers import SentenceTransformer
-    return SentenceTransformer(path, trust_remote_code = True, device = "cuda")
-
-def generator(path):
-    from transformers import AutoTokenizer, AutoModelForCausalLM
-    tokenizer = AutoTokenizer.from_pretrained(path)
-    model = AutoModelForCausalLM.from_pretrained(path).to("cuda")
-    return tokenizer, model
-"""
-
-gtemodel = py"sentenceTrans"("Alibaba-NLP/gte-large-en-v1.5")
-expmodel = py"generator"("yam-peleg/Experiment21-7B")
-
-println("language models loaded.")
+config = JSON3.read(open("config.json", "r"))
 
 
-function gtelarge(query)
+print("connecting postgresql database... ")
+pqsql = LibPQ.Connection("dbname=$(config.postgres.database) host=$(config.postgres.host) user=$(config.postgres.user) password=$(config.postgres.pass)")
+println("done.")
 
-    global gtemodel
-    return gtemodel.encode(query)
+sources = config.sources
 
-end
+dates = [1974, 2024]
+n = 0
 
-function word2vec(query)
-
-    function wordvec(word, N)
-        global redis
-        vector = Jedis.hget("vectors:word2vec", word; client = redis)
-        if isnothing(vector)
-            vector = Jedis.hget("vectors:word2vec", lowercase(word); client = redis)
+println("loading retrieval models:")
+retrieval = Dict()
+for mi in keys(config.retrieval)
+    ii = (; config.retrieval[mi]..., name = mi)
+    if mi == :word2vec
+        ii = (; ii..., redis = Jedis.Client(host = ii.host))
+        if !isempty(ii.pass)
+            Jedis.auth(ii.pass, client = ii.redis)
+            n = Jedis.execute(["ft.info", "word2vec"], ii.redis)[10]
         end
-        if isnothing(vector)
-            Float32.(vec(zeros(1, N)))
-        else
-            parse.(Float32,split(chop(vector,head=1),","))
-        end
+        ii = (; ii..., id = "word2vec")
+    else
+        ii = (; ii..., encoder = transformer.sentence(ii.path))
+        ii = (; ii..., id = basename(ii.path))
     end
-
-    words = reduce(vcat, nltk_word_tokenize.(split_sentences(query)))
-    vectors = stack(wordvec.(words, 300))
-    vec(mean(vectors, dims = 2))
-
+    retrieval[mi] = ii
+    println("[+] " * String(mi))
 end
+println("done!")
+
+println("articles indexed: " * string(n))
+
+println("loading generative models:")
+answering = Dict()
+for mi in keys(config.answering)
+    ii = (; config.answering[mi]..., name = mi)
+    tk, tf = transformer.generator(ii.path)
+    ii = (; ii..., tokenizer = tk, transformer = tf)
+    ii = (; ii..., id = basename(ii.path))
+    answering[mi] = ii
+    println("[+] " * String(mi))
+end
+println("done!")
 
 
-py"""
 
-import redis
-import numpy
-from redis.commands.search.query import Query
 
-def runquery(vector, model, start, N):
-    query = (
-        Query("(*)=>[KNN 8192 @" + model + " $vector AS score]")
-        .sort_by("score")
-        .paging(start, N)
-        .return_fields("score", "i")
-        .dialect(2)
-    )
-    bytes = numpy.array(vector, dtype = numpy.float32).tobytes()
-    client = redis.Redis(port = 6379, decode_responses = True)
-    result = client.ft(model).search(query, {"vector": bytes})
-    return result.docs
 
-def answer(tokenizer, model, question):
-    inputs = tokenizer(question, return_tensors = "pt", return_attention_mask = False).to("cuda")
-    outputs = model.generate(**inputs, max_length = 256, pad_token_id = 100)
-    text = tokenizer.batch_decode(outputs)[0]
-    return text
-
-"""
-
-function answer(question)
-    global expmodel
-    tokenizer, model = expmodel
-    response = py"answer"(tokenizer, model, question)
+function answer(question, model)
+    response = transformer.answer(model.tokenizer, model.transformer, question)
     response = chop(response, head = 4 + length(question) + 1, tail = 4)
     if occursin("INST", response)
         response = split(response, "INST")[1]
@@ -102,50 +77,85 @@ function answer(question)
     join(response[1:length(response)-1], ".") * "..."
 end
 
-function search(query, model, start = 0, N = 32)
+
+function search(query, model; sources = [], dates = [], start = 0, N = 32)
     global pqsql
-
-    models = Dict("word2vec"          => :word2vec,
-                  "gte-large-en-v1.5" => :gtelarge)
-
-    if model in keys(models)
-        model = models[model]
-        vector = getfield(Science, model)(query)
-        results = py"runquery"(vector, model, start, N)
+    vector = model.name == :word2vec ? word2vec.sentence(query, model.redis) : model.encoder.encode(query)
+    results = redisearch.runquery(vector, model.name, sources, dates, start, N, server = Dict(pairs(NamedTuple{(:host,:pass)}(model))))
+    if length(results) > 0
         records = DataFrame([NamedTuple([:i => parse(Int, r.i), :score => parse(Float32, r.score)])  for r in results])
-        result = LibPQ.execute(pqsql, "SELECT i, id, title, year, abstract FROM arxiv WHERE i IN (" * join([p.i for p in results], ", ") * ")")
+        result = LibPQ.execute(pqsql, "SELECT i, id, title, year, authors, abstract, source FROM articles WHERE i IN (" * join([p.i for p in results], ", ") * ")")
         results = DataFrame(columntable(result))
         results = leftjoin(results, records, on = [:i])
         [NamedTuple(result) for result in eachrow(results)]
-    
+    else
+        []
     end
 end
 
 
-route("/", method = GET) do
-   html(path"app.jl.html", results = "", query = "", model = "word2vec", count = 0)
+function parseque(model, query)
+    query = replace(query, "[answer]" => '?')
+    selection = Dict(sources .=> ones(length(sources), 1))
+    if occursin("[", model)
+        model, over = split(model, "[")
+        over = split(lowercase(chop(over)), ",")
+        for source in sources
+            if source ∉ over
+                selection[source] = 0
+            end
+        end
+    end
+    seledates = dates
+    if occursin("[", query)
+        query, years = split(query, "[")
+        years = tryparse.(Int64, split(chop(years), "-"))
+        if (years[1] > 1000) & (years[2] < 9999)
+            seledates = years
+        end
+    end
+    souse = collect(keys(filter( ab -> ab[2] > 0, selection)))
+    if length(souse) == length(sources)
+        souse = []
+    end
+    query = strip(query)
+    model = Symbol(model)
+    [model, query, selection, souse, seledates]
 end
+
+
+
+route("/", method = GET) do
+   selection = Dict(sources .=> ones(length(sources), 1))
+   html(path"app.jl.html", results = "", query = "", N = n,
+                           imodel = :word2vec, retrieval = retrieval,
+                           sources = selection, dates = dates, count = 0)
+end
+
 
 route("/:model/:query", method = GET) do
-   model = payload(:model)
-   query = payload(:query)
-   query = replace(query, "[ask]" => '?')
-   elapsed = @elapsed results = search(query, model)
-   html(path"app.jl.html", query = query, results = results, model = model, count = length(results), time = elapsed)
+    model, query, selection, souse, seledates = parseque(payload(:model), payload(:query))
+    original = payload(:model) * "/" * payload(:query)
+    if model in keys(retrieval)
+        model = retrieval[model]
+        elapsed = @elapsed results = search(query, model, sources = souse, dates = seledates)
+        html(path"app.jl.html", query = query,         results = results,     count = length(results),    time = elapsed,
+                                imodel = model.name,   retrieval = retrieval, jmodel = "experiment21-7B", generative = answering,
+                                sources = selection, dates = seledates, request = original)
+    end
 end
 
-route("/scroll/:model/:query/:start", method = GET) do
-    model = payload(:model)
-    query = payload(:query)
-    start = payload(:start)
-    query = replace(query, "[ask]" => '?')
-    search(query, model, start) |> json
+route("/scroll/:model/:query/:start::Int", method = GET) do
+    model, query, selection, souse, seledates = parseque(payload(:model), payload(:query))
+    if model in keys(retrieval)
+        search(query, retrieval[model], sources = souse, dates = seledates, start = payload(:start)) |> json
+    end
 end
 
 route("/answer/:question", method = GET) do
     question = payload(:question)
-    question = replace(question, "[ask]" => '?')
-    answer(question)
+    question = replace(question, "[answer]" => '?')
+    answer(question, answering[Symbol("experiment21-7B")])
 end
 
 route("/favicon.ico") do 
