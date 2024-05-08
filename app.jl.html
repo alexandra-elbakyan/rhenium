@@ -45,8 +45,9 @@
 		#settings button.selected {background: white; font-weight: bold; cursor: default;}
 		#settings button:hover {background-color: darkcyan; color:white}
 		#settings button:hover.selected {background: white; color:#444}
-		#settings input[type=checkbox] + label { font-family: monospace; cursor: hand }
+		#settings input[type=checkbox] + label { font-family: monospace }
 		#settings input.year { font-family: monospace; font-size: 12px; width: 32px; text-align: center; }
+		#settings label {cursor: hand}
 
 		#loading {width:100%; text-align: center; display: none; color: #aaa; font-size: 24px; font-family: monospace; margin-top: 18px; padding-bottom: 24px;}
 		#loading img {max-width: 128px;}
@@ -274,7 +275,7 @@
 		<% if (isempty(query))  %>
 		<div id = "main">
 			<h1>Welcome to REsearch engine!</h1>
-			<p>number of articles in the index: $(N)</p>
+			<p>number of articles in the index: $(total)</p>
 		</div>
 		<% end %>
 

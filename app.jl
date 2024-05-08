@@ -129,7 +129,7 @@ route("/", method = GET) do
    selection = Dict(sources .=> ones(length(sources), 1))
    html(path"app.jl.html", results = "", query = "", N = n,
                            imodel = :word2vec, retrieval = retrieval,
-                           sources = selection, dates = dates, count = 0)
+                           sources = selection, dates = dates, count = 11001479)
 end
 
 
