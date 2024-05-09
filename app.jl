@@ -157,7 +157,7 @@ function parseque(model, query)
             end
         end
     end
-    if occursin(model, ",")
+    if occursin(",", model)
         model, generator = split(model, ",")
     else
         generator = length(answering) > 0 ? first(keys(answering)) : ""
