@@ -35,6 +35,9 @@ println("loading retrieval models:")
 retrieval = Dict()
 for mi in keys(config.retrieval)
     ii = (; config.retrieval[mi]..., name = mi)
+    if (!isempty(ii.enabled) && !ii.enabled)
+        continue
+    end
     ii = (; ii..., hostpass = Dict(pairs(NamedTuple{(:host,:pass)}(ii))))
     if mi == :word2vec
         ii = (; ii..., redis = Jedis.Client(host = ii.host))

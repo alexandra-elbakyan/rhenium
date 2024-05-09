@@ -80,7 +80,7 @@
 				dates = [yfr, yto];
 			}
 			var query = document.getElementById('query').value;
-			var url = '/' + retrieval;
+			var url = '/' + retrieval + ',' + generative;
 			var sources = [];
 			var boxes = document.getElementsByName('sources');
 			boxes.forEach(function(b){
