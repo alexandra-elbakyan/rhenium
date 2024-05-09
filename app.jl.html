@@ -128,16 +128,14 @@
 						var tokens = JSON.parse(xmlhttp.responseText);
 						tokens.forEach(function (token, i) {
 							if (token.includes("<|end")) {
-								answered = true;
-								token = token.replace("<|end|>", "");
-								token = token.replace("<|endoftext|>", "");
-								token = token.replace("<|end_of_text|>", "");								
+								answered = true;								
 							}
-							if (token != 'START')
-							{
-								token = token.split('|')[1];
-								response.push(token);
-							}
+							markers = ["<|startup|>", "<|begin_of_text|>", "<|end|>", "<|endoftext|>", "<|end_of_text|>"]
+							markers.forEach(function (m, i) {
+								token = token.replace(m, "")
+							});
+							token = token.split('|')[1];
+							response.push(token);
 						});
 						diva = document.getElementById("answer");
 						formatted = response.join(" ").trim();
@@ -153,10 +151,9 @@
 							if (formatted.slice(-4) == "</" + "p>") {
 								formatted = formatted.substring(0, formatted.length - 4) + ' ';
 							}
-
-							diva.innerHTML = formatted;
-							diva.style.display = 'block';
 						}
+						diva.innerHTML = 'answer by <b>' + $(jmodel) + "</" + "b>:" + formatted;
+						diva.style.display = 'block';
 						if (!answered) {
 							diva.insertAdjacentHTML("beforeend", '&nbsp;<img src = "/img/flicker.gif" style = "height:14px;width:auto"></p>');
 							setTimeout(answer, 128);

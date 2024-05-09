@@ -73,7 +73,7 @@ function ask(question, model; context = "", prefix = ":")
     pool = String(model.name) * prefix * replace(lowercase(question), " " => "-")
     check = Jedis.execute(["exists", pool], memory)
     if check == 0
-        Jedis.execute(["zadd", pool, Base.time(), "START"], memory)
+        Jedis.execute(["zadd", pool, Base.time(), "<|startup|>"], memory)
         if haskey(model, :format)
             formatted = replace(model.format, "{question}" => question)
             if length(context) > 0
