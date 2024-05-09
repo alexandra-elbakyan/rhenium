@@ -176,6 +176,7 @@ function parseque(model, query)
     end
     query = strip(query)
     model = Symbol(model)
+    generator = Symbol(generator)
     [model, generator, query, selection, databases, dates, RAG]
 end
 
