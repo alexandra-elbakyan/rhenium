@@ -93,7 +93,8 @@
 			if (sources.length > 0) {
 				url += '[' + sources.join(',') + ']';
 			}
-			url += '/' + query.replace('?', '[answer]');
+			RAG = ['answer', 'RAG'][+document.getElementById('RAG').checked];
+			url += '/' + query.replace('?', '[' + RAG + ']');
 			if (dates.length > 0) {
 				url += ' [' + dates.join('-') + ']';
 			}
@@ -128,8 +129,10 @@
 						tokens.forEach(function (token, i) {
 							if (token.includes("<|endoftext|>") || token.includes("<|end|>")) {
 								answered = true;
+								token = token.replace("<|end|>", "");
+								token = token.replace("<|endoftext|>", "");
 							}
-							else if (token != 'START')
+							if (token != 'START')
 							{
 								token = token.split('|')[1];
 								response.push(token);
@@ -328,10 +331,13 @@
 		<div class = "section">
 			<span>databases</span>
 			<br>
-			<%  for_each(keys(sources)) do source
-					checked = sources[source] > 0 ? "checked = 1" : "" ;
-					"<span><input type = \"checkbox\" id = \"source:" * source * "\" value = \"" * source * "\" name = \"sources\" " * checked * " /><label for = \"source:" * source * "\">" * source * "</label></span>"
-			   end %>
+			<%  for_each(keys(sources)) do source %>
+					<span><input type = "checkbox" id = "source:$(source)" value = "$(source)" name = "sources"  $(["", "checked = checked"][Int(sources[source])+1]) /><label for = "source:$(source)">$(source)</label></span>
+			<%  end %>
+		</div>
+
+		<div class = "section">
+			<span><input type = "checkbox" id = "RAG" name = "RAG" $(["", "checked = checked"][Int(RAG)+1])><label for = "RAG">RAG enabled</label></span>
 		</div>
 
 	</div>

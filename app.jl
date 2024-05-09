@@ -27,6 +27,7 @@ pqsql = LibPQ.Connection("dbname=$(config.postgres.database) host=$(config.postg
 println("done.")
 
 sources = config.sources
+RAG = true
 
 timespan = [1974, 2024]
 n = 0
@@ -132,7 +133,14 @@ end
 
 
 function parseque(model, query)
-    query = replace(query, "[answer]" => '?')
+    RAG = true
+    israg = Dict("RAG" => true, "answer" => false)
+    for ra in keys(israg)
+        if occursin("[" * ra * "]", query)
+            query = replace(query, "[" * ra * "]" => '?')
+            RAG = israg[ra]
+        end
+    end
     sourci = String.(keys(sources))
     selection = Dict(sourci .=> ones(length(sources), 1))
     if occursin("[", model)
@@ -163,7 +171,7 @@ function parseque(model, query)
     end
     query = strip(query)
     model = Symbol(model)
-    [model, generator, query, selection, databases, dates]
+    [model, generator, query, selection, databases, dates, RAG]
 end
 
 
@@ -172,46 +180,49 @@ route("/", method = GET) do
    selection = Dict(String.(keys(sources)) .=> ones(length(sources), 1))
    html(path"app.jl.html", results = "", count = 0, query = "", N = n,
                            imodel = :word2vec, jmodel = length(answering) > 0 ? first(keys(answering)) : "",
-                           retrieval = retrieval, generative = answering,
+                           retrieval = retrieval, generative = answering, RAG = RAG,
                            sources = selection, dates = timespan, total = 11001479)
 end
 
 
 route("/:model/:query", method = GET) do
-    model, generator, query, selection, databases, dates = parseque(payload(:model), payload(:query))
+    model, generator, query, selection, databases, dates, RAG = parseque(payload(:model), payload(:query))
     original = payload(:model) * "/" * payload(:query)
     if model in keys(retrieval)
         model = retrieval[model]
         elapsed = @elapsed results = search(query, model, sources = databases, dates = dates)
         html(path"app.jl.html", query = query,         results = results,     count = length(results),    time = elapsed,
                                 imodel = model.name,   retrieval = retrieval, jmodel = generator, generative = answering,
-                                sources = selection, dates = dates, request = original)
-    elseif  model in keys(answering)
-        # 
+                                sources = selection, dates = dates, request = original, RAG = RAG)
     end
 end
 
 route("/scroll/:model/:query/:start::Int", method = GET) do
-    model, generator, query, selection, databases, dates = parseque(payload(:model), payload(:query))
+    model, generator, query, selection, databases, dates, RAG = parseque(payload(:model), payload(:query))
     if model in keys(retrieval)
         search(query, retrieval[model], sources = databases, dates = dates, start = payload(:start)) |> json
     end
 end
 
 route("/ask/:model/:question", method = GET) do
-    retriever, generator, question, _, databases, dates = parseque(payload(:model), payload(:question))
-    topN = search(question, retrieval[retriever], sources = databases, dates = dates, start = 0, N = 8)
-    context = ""
-    for ai in topN
-        context = context * ai.title * "\n" * ai.abstract * "\n\n"
+    retriever, generator, question, _, databases, dates, RAG = parseque(payload(:model), payload(:question))
+    if RAG
+        topN = search(question, retrieval[retriever], sources = databases, dates = dates, start = 0, N = 8)
+        context = ""
+        for ai in topN
+            context = context * ai.title * "\n" * ai.abstract * "\n\n"
+        end
+        prefix = String(retriever) * ":" * join(databases, "|") * ":" * join(dates, "-") * ":"
+    else
+        context = ""
+        prefix = ""
     end
-    prefix = String(retriever) * ":" * join(databases, "|") * ":" * join(dates, "-") * ":"
     ask(payload(:question) * "?", answering[Symbol(generator)], context = context, prefix = prefix)
 end
 
 route("/answer/:model/:question/:start::Int", method = GET) do
-    retriever, generator, question, _, databases, dates = parseque(payload(:model), payload(:question))
-    prefix = String(retriever) * ":" * join(databases, "|") * ":" * join(dates, "-") * ":"
+    retriever, generator, question, _, databases, dates, RAG = parseque(payload(:model), payload(:question))
+    prefix = RAG ? String(retriever) * ":" * join(databases, "|") * ":" * join(dates, "-") * ":" : ""
     answer(payload(:question) * "?", answering[Symbol(generator)], start = payload(:start), prefix = prefix) |> json
 end
 
