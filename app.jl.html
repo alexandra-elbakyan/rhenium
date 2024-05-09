@@ -168,6 +168,7 @@
 		}
 
 		function ask() {
+			answer();
 			var xmlhttp = new XMLHttpRequest();
 			xmlhttp.open('GET', '/ask/' + '$(request)', true);
 			xmlhttp.onreadystatechange = function() {
@@ -178,7 +179,6 @@
 				}
 			};
 			xmlhttp.send(null);
-			answer();
 		}
 
 		function setmodel(mi) {
