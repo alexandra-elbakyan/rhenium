@@ -47,7 +47,7 @@
 		#settings button:hover.selected {background: white; color:#444}
 		#settings input[type=checkbox] + label { font-family: monospace }
 		#settings input.year { font-family: monospace; font-size: 12px; width: 32px; text-align: center; }
-		#settings label {cursor: hand}
+		#settings label {cursor: pointer}
 		#settings div.section {margin-top: 22px;}
 		#settings div.subsection {margin: 8px 0 0 0;}
 		#settings div.subsection span {text-decoration:underline; text-decoration-style: dotted;}
@@ -331,13 +331,17 @@
 		<div class = "section">
 			<span>databases</span>
 			<br>
-			<%  for_each(keys(sources)) do source %>
-					<span><input type = "checkbox" id = "source:$(source)" value = "$(source)" name = "sources"  $(["", "checked = checked"][Int(sources[source])+1]) /><label for = "source:$(source)">$(source)</label></span>
-			<%  end %>
+			<%  for_each(keys(sources)) do source
+					checked = sources[source] > 0 ? "checked = checked" : "" ;
+					"<span><input type = \"checkbox\" id = \"source:" * source * "\" value = \"" * source * "\" name = \"sources\" " * checked * " /><label for = \"source:" * source * "\">" * source * "</label></span>"
+				end %>
 		</div>
 
 		<div class = "section">
-			<span><input type = "checkbox" id = "RAG" name = "RAG" $(["", "checked = checked"][Int(RAG)+1])><label for = "RAG">RAG enabled</label></span>
+			<% begin
+					checked = RAG ? "checked = checked" : "" ;
+					"<span><input type = \"checkbox\" id = \"RAG\" name = \"RAG\"" * checked * "><label for = \"RAG\">RAG enabled</label></span>"
+			   end %>
 		</div>
 
 	</div>

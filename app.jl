@@ -27,7 +27,6 @@ pqsql = LibPQ.Connection("dbname=$(config.postgres.database) host=$(config.postg
 println("done.")
 
 sources = config.sources
-RAG = true
 
 timespan = [1974, 2024]
 n = 0
@@ -180,7 +179,7 @@ route("/", method = GET) do
    selection = Dict(String.(keys(sources)) .=> ones(length(sources), 1))
    html(path"app.jl.html", results = "", count = 0, query = "", N = n,
                            imodel = :word2vec, jmodel = length(answering) > 0 ? first(keys(answering)) : "",
-                           retrieval = retrieval, generative = answering, RAG = RAG,
+                           retrieval = retrieval, generative = answering, RAG = true,
                            sources = selection, dates = timespan, total = 11001479)
 end
 
