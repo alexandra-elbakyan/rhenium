@@ -74,11 +74,11 @@ function ask(question, model; context = "", prefix = ":")
     check = Jedis.execute(["exists", pool], memory)
     if check == 0
         Jedis.execute(["zadd", pool, Base.time(), "START"], memory)
-        if length(context) > 0
-            question = "Please use the following contextual information to answer the question:\n\n" * context * "\n\nQuestion: " * question
-        end
         if haskey(model, :format)
             formatted = replace(model.format, "{question}" => question)
+            if length(context) > 0
+                formatted = replace(formatted, "{context}" => context)
+            end
         else
             formatted = question
         end   
