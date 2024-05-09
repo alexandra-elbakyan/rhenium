@@ -216,13 +216,13 @@ route("/ask/:model/:question", method = GET) do
         context = ""
         prefix = ""
     end
-    ask(payload(:question) * "?", answering[Symbol(generator)], context = context, prefix = prefix)
+    ask(question * "?", answering[Symbol(generator)], context = context, prefix = prefix)
 end
 
 route("/answer/:model/:question/:start::Int", method = GET) do
     retriever, generator, question, _, databases, dates, RAG = parseque(payload(:model), payload(:question))
     prefix = RAG ? String(retriever) * ":" * join(databases, "|") * ":" * join(dates, "-") * ":" : ""
-    answer(payload(:question) * "?", answering[Symbol(generator)], start = payload(:start), prefix = prefix) |> json
+    answer(question * "?", answering[Symbol(generator)], start = payload(:start), prefix = prefix) |> json
 end
 
 
