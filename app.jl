@@ -211,18 +211,18 @@ route("/ask/:model/:question", method = GET) do
         for ai in topN
             context = context * ai.title * "\n" * ai.abstract * "\n\n"
         end
-        prefix = String(retriever) * ":" * join(databases, "|") * ":" * join(dates, "-") * ":"
+        prefix = ":" * String(retriever) * ":" * join(databases, "|") * ":" * join(dates, "-") * ":"
     else
         context = ""
-        prefix = ""
+        prefix = ":"
     end
-    ask(question * "?", answering[Symbol(generator)], context = context, prefix = prefix)
+    ask(question, answering[Symbol(generator)], context = context, prefix = prefix)
 end
 
 route("/answer/:model/:question/:start::Int", method = GET) do
     retriever, generator, question, _, databases, dates, RAG = parseque(payload(:model), payload(:question))
-    prefix = RAG ? String(retriever) * ":" * join(databases, "|") * ":" * join(dates, "-") * ":" : ""
-    answer(question * "?", answering[Symbol(generator)], start = payload(:start), prefix = prefix) |> json
+    prefix = RAG ? ":" * String(retriever) * ":" * join(databases, "|") * ":" * join(dates, "-") * ":" : ":"
+    answer(question, answering[Symbol(generator)], start = payload(:start), prefix = prefix) |> json
 end
 
 
