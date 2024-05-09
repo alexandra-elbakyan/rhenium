@@ -145,7 +145,7 @@ end
 
 
 route("/", method = GET) do
-   selection = Dict(sources .=> ones(length(sources), 1))
+   selection = Dict(String.(keys(sources)) .=> ones(length(sources), 1))
    html(path"app.jl.html", results = "", query = "", N = n,
                            imodel = :word2vec, jmodel = "experiment21-7B", retrieval = retrieval,
                            sources = selection, dates = dates, total = 11001479)
