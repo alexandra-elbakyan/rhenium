@@ -154,11 +154,12 @@
 						}
 						diva.innerHTML = 'answer by <b>$(jmodel)</' + "b>: " + formatted;
 						diva.style.display = 'block';
+						termins = ['.', '"', ']'];
 						if (!answered) {
 							diva.insertAdjacentHTML("beforeend", '&nbsp;<img src = "/img/flicker.gif" style = "height:14px;width:auto"></p>');
 							setTimeout(answer, 128);
 						}
-						else if (formatted.trim().slice(-1) != '.') {
+						else if (!termins.include(formatted.trim().slice(-1))) {
 							diva.insertAdjacentHTML("beforeend", '... (output truncated)');
 						}
 					}
