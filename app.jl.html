@@ -144,7 +144,7 @@
 		const plusResult = (page, data, i) => {
 			result = document.createElement("div");
 			result.className = "result";
-			result.innerHTML = '<a target = "_blank" href = "//arxiv.org/abs/' + data.id + '">' + data.title + "</a>";
+			result.innerHTML = '<a target = "_blank" href = "/article/' + data.id + '">' + data.title + "</a>";
 			page.appendChild(result);
 			result.insertAdjacentHTML("afterbegin", '<span class = "author">' + data.authors + '</span>');
 			result.insertAdjacentHTML("afterbegin", '<span class = "i">' + (parseInt(page.getAttribute("tag")) + i + 1) + '.<br><span class = "score">' + (1 - data.score).toFixed(4) + '</span></span><span>')
