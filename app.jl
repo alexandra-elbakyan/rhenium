@@ -74,7 +74,11 @@ function ask(question, model, context = "")
     check = Jedis.execute(["exists", pool], memory)
     if check == 0
         Jedis.execute(["zadd", pool, Base.time(), "START"], memory)
-        formatted = "<|user|>\n" * question * " <|end|>\n<|assistant|>"    
+        if haskey(model, :format)
+            formatted = replace(model.format, "{question}" => question)
+        else
+            formatted = question
+        end   
         streamer = transformer.answer(model.tokenizer, model.transformer, formatted)
         i = 1
         for token in streamer
