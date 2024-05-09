@@ -61,6 +61,9 @@ println("loading generative models:")
 answering = Dict()
 for mi in keys(config.answering)
     ii = (; config.answering[mi]..., name = mi)
+    if (haskey(ii, :enabled) && !ii.enabled)
+        continue
+    end
     tk, tf = transformer.generator(ii.path)
     ii = (; ii..., tokenizer = tk, transformer = tf)
     ii = (; ii..., id = basename(ii.path))
