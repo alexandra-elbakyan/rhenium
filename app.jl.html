@@ -306,14 +306,6 @@
 						end
 						abstract
 						end
-					
-					function geturl(id, source)
-						if source == "arxiv"
-							"arxiv.org/abs/" * id
-						else
-							"pubmed.ncbi.nlm.nih.gov/" * id
-						end
-					end
 				i = i + 1
 				%>
 					<div class = "result">
@@ -322,7 +314,7 @@
 						</span>
 						<span>
 							<span class = "author">$(result.authors)</span>
-							<a target = "_blank" href = "//$(geturl(result.id, result.source))">$(result.title)</a> ($(result.year))
+							<a target = "_blank" href = "/article/$(result.id)">$(result.title)</a> ($(result.year))
 							<p>$(wordtrim(result.abstract))</p>
 						</span>
 					</div>

@@ -7,6 +7,7 @@ using Genie.Renderer.Html
 using Genie.Requests
 using LibPQ, Jedis
 using DataFrames, Tables
+using SQLStrings
 using JSON3
 
 using PyCall
@@ -33,6 +34,7 @@ println("loading retrieval models:")
 retrieval = Dict()
 for mi in keys(config.retrieval)
     ii = (; config.retrieval[mi]..., name = mi)
+    ii = (; ii..., hostpass = Dict(pairs(NamedTuple{(:host,:pass)}(ii))))
     if mi == :word2vec
         ii = (; ii..., redis = Jedis.Client(host = ii.host))
         if !isempty(ii.pass)
@@ -78,13 +80,15 @@ function answer(question, model)
 end
 
 
-function search(query, model; sources = [], dates = [], start = 0, N = 32)
+
+function metadata(results, fields = ["i"])
     global pqsql
-    vector = model.name == :word2vec ? word2vec.sentence(query, model.redis) : model.encoder.encode(query)
-    results = redisearch.runquery(vector, model.name, sources, dates, start, N, server = Dict(pairs(NamedTuple{(:host,:pass)}(model))))
+    if "i" ∉ fields
+        push!(fields, "i")
+    end
     if length(results) > 0
-        records = DataFrame([NamedTuple([:i => parse(Int, r.i), :score => parse(Float32, r.score)])  for r in results])
-        result = LibPQ.execute(pqsql, "SELECT i, id, title, year, authors, abstract, source FROM articles WHERE i IN (" * join([p.i for p in results], ", ") * ")")
+        records = DataFrame([(i = parse(Int64, r.i), score = parse(Float32, r.score)) for r in results])
+        result = LibPQ.execute(pqsql, "SELECT " * join(fields, ", ") * " FROM articles WHERE i IN (" * join([p.i for p in results], ", ") * ")")
         results = DataFrame(columntable(result))
         results = leftjoin(results, records, on = [:i])
         [NamedTuple(result) for result in eachrow(results)]
@@ -93,14 +97,29 @@ function search(query, model; sources = [], dates = [], start = 0, N = 32)
     end
 end
 
+function search(query, model; sources = [], dates = [], start = 0, N = 32)
+    vector = model.name == :word2vec ? word2vec.sentence(query, model.redis) : model.encoder.encode(query)
+    results = redisearch.search(vector, model.name, sources, dates, start, N, server = model.hostpass)
+    metadata(results, ["id", "title", "year", "authors", "abstract", "source"])
+end
+
+function article(id)
+    global pqsql
+    meta = LibPQ.execute(pqsql, sql`SELECT i, id, title, year, authors, abstract, source FROM articles WHERE id = $id`)
+    return rowtable(meta)[1]
+end
+
+
+
 
 function parseque(model, query)
     query = replace(query, "[answer]" => '?')
-    selection = Dict(sources .=> ones(length(sources), 1))
+    sourci = String.(keys(sources))
+    selection = Dict(sourci .=> ones(length(sources), 1))
     if occursin("[", model)
         model, over = split(model, "[")
         over = split(lowercase(chop(over)), ",")
-        for source in sources
+        for source in sourci
             if source ∉ over
                 selection[source] = 0
             end
@@ -157,6 +176,21 @@ route("/answer/:question", method = GET) do
     question = replace(question, "[answer]" => '?')
     answer(question, answering[Symbol("experiment21-7B")])
 end
+
+
+route("/article/:id", method = GET) do
+    ai = article(payload(:id))
+    ai = (; ai..., url    = sources[ai.source].url * ai.id,
+                   source = sources[ai.source].name)
+
+    model = retrieval[:gtelarge]
+    similar = redisearch.similar(ai.i, model.name, server = model.hostpass)
+    similar = metadata(similar, ["id", "title", "year"])
+    similar = similar[2:length(similar)]
+    
+    html(path"art.jl.html", article = ai, similar = similar)
+end
+
 
 route("/favicon.ico") do 
     redirect("/img/re.ico")

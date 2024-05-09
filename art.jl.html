@@ -1,0 +1,71 @@
+<html>
+	<header>
+		<title>[RE]search: $(article.title)</title>
+		<link rel="icon" href="/img/re.ico" />
+	</header>
+<body>
+
+	<style type = "text/css">
+
+		body {margin:0;font-family:monospace;font-size: 14px;}
+
+		a {text-decoration:none; color: olive;font-size: 18px;}
+		a:hover {background-color: #f6909d;color: white;border-radius: 4px;}
+
+		#top {margin-top:32px; width: 100%; display: flex; align-items: center; justify-content: left;flex-grow: 1}
+        #top img {width: 96px; height:auto}
+		#logo {font-size: 40px; color:black;font-weight:bold}
+		#form {margin-left: 16px;margin-top:32px; flex-basis: 23%; flex-grow: 1; text-align: center;}
+		#content-wrapper {display: flex; flex-direction: column;}
+		#content {align-self: center; min-width: 600px; max-width: 1024px; margin: 0 16px 0 16px;}
+
+        #article {margin-top: 64px; padding-bottom: 64px;}
+        #article div {margin-top: 12px;}
+        #article #year {font-size: 22px;}
+        #article #title {font-size: 32px;}
+        #article #abstract {text-align: justify; font-size: 16px; width: 90%}
+        #article #url {margin-top: 16px}
+        #article #similar {margin-top: 32px}
+        #article #queries {margin-top: 32px}
+        #article h2 {font-size: 20px;}
+        #article p.similar {margin: 2px}
+        #article p.similar a {font-size: 14px;}
+
+    </style>
+
+    <div id = "logo"></div>
+	<div id = "content-wrapper">
+	<div id = "content">
+
+		<div id = "top">
+			<img src = "/img/re.jpg">
+			<span id = "logo">search</span>
+		</div>
+
+		<div id = "article">
+			<div id = "year">$(article.year)</div>
+			<div id = "title">$(strip(article.title, '.'))</div>
+			<div id = "authors">$(article.authors)</div>
+			<div id = "abstract">$(article.abstract)</div>
+			<div id = "url">
+                <a target = "_blank" href = "//$(article.url)">$(article.source)</a>
+            </div>
+            <div id = "similar">
+                <h2>similar articles</h2>
+                <% for_each(similar) do sima %>
+                    <p class = "similar">$(sima.year) <span class = "score">$(Int(round(100 * (1-sima.score))))%</span> <a href = "/article/$(sima.id)">$(sima.title)</a></p>
+                <% end %>
+            </div>
+            <!--
+            <div id = "queries">
+                <h2>queries used to find this paper</h2>
+
+            </div>
+            -->
+		</div>
+		
+    </div>
+</div>
+
+</body>
+</html>
