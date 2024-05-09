@@ -120,7 +120,7 @@
 
 		function answer() {
 			var xmlhttp = new XMLHttpRequest();
-			xmlhttp.open('GET', '/answer/$(jmodel)/' + '$(query)'.replace('?', '') + '/' + (response.length + 1).toString(), true);
+			xmlhttp.open('GET', '/answer/' + '$(request)' + '/' + (response.length + 1).toString(), true);
 			xmlhttp.onreadystatechange = function() {
 				if (xmlhttp.readyState == 4) {
 					if(xmlhttp.status == 200) {
@@ -154,7 +154,7 @@
 							diva.style.display = 'block';
 						}
 						if (!answered) {
-							diva.insertAdjacentHTML("beforeend", '&nbsp;<img src = "/img/flicker.gif" style = "height:14px;width:auto">');
+							diva.insertAdjacentHTML("beforeend", '&nbsp;<img src = "/img/flicker.gif" style = "height:14px;width:auto"></p>');
 							setTimeout(answer, 128);
 						}
 						else if (formatted.slice(-1) != '.') {
@@ -168,7 +168,7 @@
 
 		function ask() {
 			var xmlhttp = new XMLHttpRequest();
-			xmlhttp.open('GET', '/ask/$(jmodel)/' + '$(query)'.replace('?', ''), true);
+			xmlhttp.open('GET', '/ask/' + '$(request)', true);
 			xmlhttp.onreadystatechange = function() {
 				if (xmlhttp.readyState == 4) {
 					if(xmlhttp.status == 200) {

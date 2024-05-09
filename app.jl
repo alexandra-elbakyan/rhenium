@@ -28,7 +28,7 @@ println("done.")
 
 sources = config.sources
 
-dates = [1974, 2024]
+timespan = [1974, 2024]
 n = 0
 
 println("loading retrieval models:")
@@ -69,11 +69,14 @@ println("done!")
 
 
 
-function ask(question, model, context = "")
-    pool = String(model.name) * ":" * replace(lowercase(question), " " => "-")
+function ask(question, model; context = "", prefix = ":")
+    pool = String(model.name) * prefix * replace(lowercase(question), " " => "-")
     check = Jedis.execute(["exists", pool], memory)
     if check == 0
         Jedis.execute(["zadd", pool, Base.time(), "START"], memory)
+        if length(context) > 0
+            question = "Please use the following contextual information to answer the question:\n\n" * context * "\n\nQuestion: " * question
+        end
         if haskey(model, :format)
             formatted = replace(model.format, "{question}" => question)
         else
@@ -91,9 +94,9 @@ function ask(question, model, context = "")
     end
 end
 
-function answer(question, model, start = 0)
+function answer(question, model; start = 0, prefix = ":")
     client = Jedis.Client(host = "localhost")
-    Jedis.execute(["zrange", String(model.name) * ":" * replace(lowercase(question), " " => "-"), start, "-1"], client)
+    Jedis.execute(["zrange", String(model.name) * prefix * replace(lowercase(question), " " => "-"), start, "-1"], client)
 end
 
 
@@ -146,21 +149,21 @@ function parseque(model, query)
     else
         generator = length(answering) > 0 ? first(keys(answering)) : ""
     end
-    seledates = dates
+    dates = timespan
     if occursin("[", query)
         query, years = split(query, "[")
         years = tryparse.(Int64, split(chop(years), "-"))
         if (years[1] > 1000) & (years[2] < 9999)
-            seledates = years
+            dates = years
         end
     end
-    souse = collect(keys(filter( ab -> ab[2] > 0, selection)))
-    if length(souse) == length(sources)
-        souse = []
+    databases = collect(keys(filter( ab -> ab[2] > 0, selection)))
+    if length(databases) == length(sources)
+        databases = []
     end
     query = strip(query)
     model = Symbol(model)
-    [model, generator, query, selection, souse, seledates]
+    [model, generator, query, selection, databases, dates]
 end
 
 
@@ -170,39 +173,46 @@ route("/", method = GET) do
    html(path"app.jl.html", results = "", count = 0, query = "", N = n,
                            imodel = :word2vec, jmodel = length(answering) > 0 ? first(keys(answering)) : "",
                            retrieval = retrieval, generative = answering,
-                           sources = selection, dates = dates, total = 11001479)
+                           sources = selection, dates = timespan, total = 11001479)
 end
 
 
 route("/:model/:query", method = GET) do
-    model, generator, query, selection, souse, seledates = parseque(payload(:model), payload(:query))
+    model, generator, query, selection, databases, dates = parseque(payload(:model), payload(:query))
     original = payload(:model) * "/" * payload(:query)
     if model in keys(retrieval)
         model = retrieval[model]
-        elapsed = @elapsed results = search(query, model, sources = souse, dates = seledates)
+        elapsed = @elapsed results = search(query, model, sources = databases, dates = dates)
         html(path"app.jl.html", query = query,         results = results,     count = length(results),    time = elapsed,
                                 imodel = model.name,   retrieval = retrieval, jmodel = generator, generative = answering,
-                                sources = selection, dates = seledates, request = original)
+                                sources = selection, dates = dates, request = original)
     elseif  model in keys(answering)
         # 
     end
 end
 
 route("/scroll/:model/:query/:start::Int", method = GET) do
-    model, generator, query, selection, souse, seledates = parseque(payload(:model), payload(:query))
+    model, generator, query, selection, databases, dates = parseque(payload(:model), payload(:query))
     if model in keys(retrieval)
-        search(query, retrieval[model], sources = souse, dates = seledates, start = payload(:start)) |> json
+        search(query, retrieval[model], sources = databases, dates = dates, start = payload(:start)) |> json
     end
 end
 
-route("/ask/:generator/:question", method = GET) do
-    model = answering[Symbol(payload(:generator))]
-    ask(payload(:question) * "?", model)
+route("/ask/:model/:question", method = GET) do
+    retriever, generator, question, _, databases, dates = parseque(payload(:model), payload(:question))
+    topN = search(question, retrieval[retriever], sources = databases, dates = dates, start = 0, N = 8)
+    context = ""
+    for ai in topN
+        context = context * ai.title * "\n" * ai.abstract * "\n\n"
+    end
+    prefix = String(retriever) * ":" * join(databases, "|") * ":" * join(dates, "-") * ":"
+    ask(payload(:question) * "?", answering[Symbol(generator)], context = context, prefix = prefix)
 end
 
-route("/answer/:generator/:question/:start::Int", method = GET) do
-    model = answering[Symbol(payload(:generator))]
-    answer(payload(:question) * "?", model, payload(:start)) |> json
+route("/answer/:model/:question/:start::Int", method = GET) do
+    retriever, generator, question, _, databases, dates = parseque(payload(:model), payload(:question))
+    prefix = String(retriever) * ":" * join(databases, "|") * ":" * join(dates, "-") * ":"
+    answer(payload(:question) * "?", answering[Symbol(generator)], start = payload(:start), prefix = prefix) |> json
 end
 
 
