@@ -1,8 +1,8 @@
 <html>
-	<header>
+	<head>
 		<title>[RE]search</title>
 		<link rel="icon" href="/img/re.ico" />
-	</header>
+	</head>
 <body>
 
 	<style type = "text/css">
@@ -34,12 +34,12 @@
 		.result .score {font-size: 10px; margin-top: 12px; color: #aaa}
 		.result .i {display:table-cell; text-align: rihgt; padding-right: 12px; vertical-align: top; font-weight: bold; font-size: 24px; color: #aaa}
 
-		#answer {align-self: center; margin-top: 16px; font-family: monospace; font-size: 14px; padding: 16px; border: dashed 2px #ccc; border-radius: 8px; display: none}
+		#answer {align-self: center; margin-top: 16px; font-family: monospace; font-size: 14px; padding: 16px; border: dashed 2px #ccc; border-radius: 8px; display: none; text-align: justify;max-height: 256px;overflow-y: scroll;}
 
 		#settings {position: fixed; height: 100%; background: #aaa; width: 192px; color: black; margin: 0 2% 0 0;}
 		#settings div {margin: 8px 24px 0 24px;}
-		#settings div:first-of-type {font-family: monospace; font-size: 24px; color: black; padding-bottom: 20px; margin-top: 24px}
-		#settings div:first-of-type img {max-width: 22%;}
+		#settings div.header {font-size: 24px; color: black; margin-top: 24px}
+		#settings div.header img {max-width: 22%;}
 		#settings span {font-family: monospace; font-size: 12px}
 		#settings button {margin-top: 8px; cursor: pointer; font-family: monospace; font-size: 12px; background: #bbb; padding: 4px; border: solid 1px #aaa; color: #444; border-radius: 4px;}
 		#settings button.selected {background: white; font-weight: bold; cursor: default;}
@@ -48,11 +48,22 @@
 		#settings input[type=checkbox] + label { font-family: monospace }
 		#settings input.year { font-family: monospace; font-size: 12px; width: 32px; text-align: center; }
 		#settings label {cursor: hand}
+		#settings div.section {margin-top: 22px;}
+		#settings div.subsection {margin: 8px 0 0 0;}
+		#settings div.subsection span {text-decoration:underline; text-decoration-style: dotted;}
 
 		#loading {width:100%; text-align: center; display: none; color: #aaa; font-size: 24px; font-family: monospace; margin-top: 18px; padding-bottom: 24px;}
 		#loading img {max-width: 128px;}
 
 		#main {margin-top: 64px;}
+
+		pre {
+			white-space: pre-wrap;       /* Since CSS 2.1 */
+			white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+			white-space: -pre-wrap;      /* Opera 4-6 */
+			white-space: -o-pre-wrap;    /* Opera 7 */
+			word-wrap: break-word;       /* Internet Explorer 5.5+ */
+		}
 	</style>
 
 
@@ -104,20 +115,69 @@
 		}
 
 
-		function ask(question) {
+		var response = [];
+		var answered = false;
+
+		function answer() {
 			var xmlhttp = new XMLHttpRequest();
-			xmlhttp.open('GET', '/answer/' + question.replace('?', '[answer]'), true);
+			xmlhttp.open('GET', '/answer/$(jmodel)/' + '$(query)'.replace('?', '') + '/' + (response.length + 1).toString(), true);
 			xmlhttp.onreadystatechange = function() {
 				if (xmlhttp.readyState == 4) {
 					if(xmlhttp.status == 200) {
-						var answer = xmlhttp.responseText;
+						var tokens = JSON.parse(xmlhttp.responseText);
+						tokens.forEach(function (token, i) {
+							if (token.includes("<|endoftext|>") || token.includes("<|end|>")) {
+								answered = true;
+							}
+							else if (token != 'START')
+							{
+								token = token.split('|')[1];
+								response.push(token);
+							}
+						});
 						diva = document.getElementById("answer");
-						diva.innerHTML = '<p>' + answer.split("\\n").join('</p><p>') + '</p>';
-						diva.style.display = 'block';
+						formatted = response.join(" ").trim();
+						if (formatted.length > 0) {
+							formatted = formatted.replace(/\\*{2}([^*]+)\\*{2}/g, '<b>\$1' + '</' + 'b>');
+
+							matches = formatted.match(/(\\d+\\.\\d*)\\s?(.*?)(?=\\d+\\.|\$)/gs);
+							if (matches) {
+								matches.forEach(function (m, i) {
+									formatted = formatted.replace(m, "<p>" + m + "</" + "p>")
+								});
+							}
+							if (formatted.slice(-4) == "</" + "p>") {
+								formatted = formatted.substring(0, formatted.length - 4) + ' ';
+							}
+
+							diva.innerHTML = formatted;
+							diva.style.display = 'block';
+						}
+						if (!answered) {
+							diva.insertAdjacentHTML("beforeend", '&nbsp;<img src = "/img/flicker.gif" style = "height:14px;width:auto">');
+							setTimeout(answer, 128);
+						}
+						else if (formatted.slice(-1) != '.') {
+							diva.insertAdjacentHTML("beforeend", '... (output truncated)');
+						}
 					}
 				}
 			};
 			xmlhttp.send(null);
+		}
+
+		function ask() {
+			var xmlhttp = new XMLHttpRequest();
+			xmlhttp.open('GET', '/ask/$(jmodel)/' + '$(query)'.replace('?', ''), true);
+			xmlhttp.onreadystatechange = function() {
+				if (xmlhttp.readyState == 4) {
+					if(xmlhttp.status == 200) {
+						answered = true;
+					}
+				}
+			};
+			xmlhttp.send(null);
+			answer();
 		}
 
 		function setmodel(mi) {
@@ -125,6 +185,13 @@
 			retrieval = mi;
 			document.getElementById('button:' + mi).classList.add('selected');
 		}
+
+		function setgen(mi) {
+			document.getElementById('button:' + generative).classList.remove('selected');
+			generative = mi;
+			document.getElementById('button:' + mi).classList.add('selected');
+		}
+
 
 		var index = $(count);
 		var psize = $(count);
@@ -213,7 +280,7 @@
 			window.addEventListener("scroll", handleInfiniteScroll);
 			query = '$(query)';
 			if (query.slice(-1) == '?') {
-				ask(query);
+				ask();
 			}
 			pages.push(document.getElementById(":1"));
 		};
@@ -222,32 +289,43 @@
 	</script>
 
 	<div id = "settings">
-		<div>
+		<div class = "header">
 			<img src = "/img/gears.png">settings
 		</div>
 
-		<div>
-			<span>embedding model used for retrieval</span>
+		<div class = "section">
+			<span>embedding model used for retrieval:</span>
+
+			<div class = "subsection">
+			<span>general</span>
 			<br>			    
 			<%  for_each(values(retrieval)) do model
 				   selected = model.name == imodel ? "class = 'selected'" : ""
 				   "<button id = \"button:" * String(model.name) * "\" onclick = \"setmodel('" * String(model.name) * "')\" " * selected * ">" * model.id * "</button>"
 			    end %>
+			</div>
+			
+			<div class = "subsection">
+			<span>specialized</span>
+			</div>
 		</div>
 		
-		<div>
-			<span>language model to answer questions</span>
+		<div class = "section">
+			<span>language model to answer questions:</span>
 			<br>
-			<button class = "selected">experiment21-7B</button>
+			<%  for_each(values(generative)) do model
+				   selected = model.name == jmodel ? "class = 'selected'" : ""
+				   "<button id = \"button:" * String(model.name) * "\" onclick = \"setgen('" * String(model.name) * "')\" " * selected * ">" * String(model.name) * "</button>"
+			    end %>
 		</div>
 
-		<div>
+		<div class = "section">
 			<span>published in</span>
 			<br>
 			<input value = "$(dates[1])" id = "year:from" class = "year"> - <input value = "$(dates[2])" id = "year:to" class = "year">
 		</div>
 
-		<div>
+		<div class = "section">
 			<span>databases</span>
 			<br>
 			<%  for_each(keys(sources)) do source
@@ -324,7 +402,7 @@
 			</div>
 		</div>
 		<div id = "loading">
-			<img src = "/img/loading.gif" align = "middle"> loading...
+			<img src = "/img/vanilina.gif" align = "middle"> loading...
 		</div>
 	
 	</div></div>

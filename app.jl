@@ -20,6 +20,7 @@ include("modules/word2vec.jl")
 
 config = JSON3.read(open("config.json", "r"))
 
+memory = Jedis.Client(host = "localhost")
 
 print("connecting postgresql database... ")
 pqsql = LibPQ.Connection("dbname=$(config.postgres.database) host=$(config.postgres.host) user=$(config.postgres.user) password=$(config.postgres.pass)")
@@ -68,17 +69,28 @@ println("done!")
 
 
 
-
-function answer(question, model)
-    response = transformer.answer(model.tokenizer, model.transformer, question)
-    response = chop(response, head = 4 + length(question) + 1, tail = 4)
-    if occursin("INST", response)
-        response = split(response, "INST")[1]
+function ask(question, model, context = "")
+    pool = String(model.name) * ":" * replace(lowercase(question), " " => "-")
+    check = Jedis.execute(["exists", pool], memory)
+    if check == 0
+        Jedis.execute(["zadd", pool, Base.time(), "START"], memory)
+        formatted = "<|user|>\n" * question * " <|end|>\n<|assistant|>"    
+        streamer = transformer.answer(model.tokenizer, model.transformer, formatted)
+        i = 1
+        for token in streamer
+            if length(token) == 0
+                token = "\n"
+            end
+            Jedis.execute(["zadd", pool, Base.time(), string(i) * "|" * token], memory)
+            i = i + 1
+        end
     end
-    response = split(response, ".")
-    join(response[1:length(response)-1], ".") * "..."
 end
 
+function answer(question, model, start = 0)
+    client = Jedis.Client(host = "localhost")
+    Jedis.execute(["zrange", String(model.name) * ":" * replace(lowercase(question), " " => "-"), start, "-1"], client)
+end
 
 
 function metadata(results, fields = ["i"])
@@ -125,6 +137,11 @@ function parseque(model, query)
             end
         end
     end
+    if occursin(model, ",")
+        model, generator = split(model, ",")
+    else
+        generator = length(answering) > 0 ? first(keys(answering)) : ""
+    end
     seledates = dates
     if occursin("[", query)
         query, years = split(query, "[")
@@ -139,42 +156,49 @@ function parseque(model, query)
     end
     query = strip(query)
     model = Symbol(model)
-    [model, query, selection, souse, seledates]
+    [model, generator, query, selection, souse, seledates]
 end
 
 
 
 route("/", method = GET) do
    selection = Dict(String.(keys(sources)) .=> ones(length(sources), 1))
-   html(path"app.jl.html", results = "", query = "", N = n,
-                           imodel = :word2vec, jmodel = "experiment21-7B", retrieval = retrieval,
+   html(path"app.jl.html", results = "", count = 0, query = "", N = n,
+                           imodel = :word2vec, jmodel = length(answering) > 0 ? first(keys(answering)) : "",
+                           retrieval = retrieval, generative = answering,
                            sources = selection, dates = dates, total = 11001479)
 end
 
 
 route("/:model/:query", method = GET) do
-    model, query, selection, souse, seledates = parseque(payload(:model), payload(:query))
+    model, generator, query, selection, souse, seledates = parseque(payload(:model), payload(:query))
     original = payload(:model) * "/" * payload(:query)
     if model in keys(retrieval)
         model = retrieval[model]
         elapsed = @elapsed results = search(query, model, sources = souse, dates = seledates)
         html(path"app.jl.html", query = query,         results = results,     count = length(results),    time = elapsed,
-                                imodel = model.name,   retrieval = retrieval, jmodel = "experiment21-7B", generative = answering,
+                                imodel = model.name,   retrieval = retrieval, jmodel = generator, generative = answering,
                                 sources = selection, dates = seledates, request = original)
+    elseif  model in keys(answering)
+        # 
     end
 end
 
 route("/scroll/:model/:query/:start::Int", method = GET) do
-    model, query, selection, souse, seledates = parseque(payload(:model), payload(:query))
+    model, generator, query, selection, souse, seledates = parseque(payload(:model), payload(:query))
     if model in keys(retrieval)
         search(query, retrieval[model], sources = souse, dates = seledates, start = payload(:start)) |> json
     end
 end
 
-route("/answer/:question", method = GET) do
-    question = payload(:question)
-    question = replace(question, "[answer]" => '?')
-    answer(question, answering[Symbol("experiment21-7B")])
+route("/ask/:generator/:question", method = GET) do
+    model = answering[Symbol(payload(:generator))]
+    ask(payload(:question) * "?", model)
+end
+
+route("/answer/:generator/:question/:start::Int", method = GET) do
+    model = answering[Symbol(payload(:generator))]
+    answer(payload(:question) * "?", model, payload(:start)) |> json
 end
 
 
