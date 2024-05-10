@@ -247,7 +247,7 @@ route("/article/:id", method = GET) do
     ai = (; ai..., url    = sources[ai.source].url * ai.id,
                    source = sources[ai.source].name)
 
-    model = retrieval[:gtelarge]
+    model = first(values(retrieval))
     similar = redisearch.similar(ai.i, model.name, server = model.hostpass)
     similar = metadata(similar, ["id", "title", "year"])
     similar = similar[2:length(similar)]

@@ -7,7 +7,7 @@
 
 	<style type = "text/css">
 
-		body {margin:0;font-family:monospace;font-size: 14px;}
+		body {margin:0;font-family:monospace;font-size: 14px; padding-bottom: 64px;}
 
 		a {text-decoration:none; color: olive;font-size: 18px;}
 		a:hover {background-color: #f6909d;color: white;border-radius: 4px;}
@@ -19,17 +19,22 @@
 		#content-wrapper {display: flex; flex-direction: column;}
 		#content {align-self: center; min-width: 600px; max-width: 1024px; margin: 0 16px 0 16px;}
 
-        #article {margin-top: 64px; padding-bottom: 64px;}
+        #article {margin-top: 64px; }
         #article div {margin-top: 12px;}
         #article #year {font-size: 22px;}
         #article #title {font-size: 32px;}
         #article #abstract {text-align: justify; font-size: 16px; width: 90%}
         #article #url {margin-top: 16px}
-        #article #similar {margin-top: 32px}
-        #article #queries {margin-top: 32px}
         #article h2 {font-size: 20px;}
-        #article p.similar {margin: 2px}
-        #article p.similar a {font-size: 14px;}
+
+        #similar {margin-top: 32px}
+        #similar div.similar {margin: 3px; display: table;}
+        #similar div.similar div {display: table-cell;}
+        #similar div.similar div:first-of-type {white-space: nowrap; font-size: 12px;}
+        #similar div.similar a {font-size: 14px;}
+
+        #queries {margin-top: 32px}
+
 
     </style>
 
@@ -50,20 +55,28 @@
 			<div id = "url">
                 <a target = "_blank" href = "//$(article.url)">$(article.source)</a>
             </div>
-            <div id = "similar">
-                <h2>similar articles</h2>
-                <% for_each(similar) do sima %>
-                    <p class = "similar">$(sima.year) <span class = "score">$(Int(round(100 * (1-sima.score))))%</span> <a href = "/article/$(sima.id)">$(sima.title)</a></p>
-                <% end %>
-            </div>
-            <!--
-            <div id = "queries">
-                <h2>queries used to find this paper</h2>
-
-            </div>
-            -->
 		</div>
-		
+
+        <div id = "similar">
+            <h2>similar articles</h2>
+            <% for_each(similar) do sima
+                function fixid(id)
+                    replace(id, "/" => "--")
+                end
+            %>
+                <div class = "similar">
+                    <div>$(sima.year) <span class = "score">$(Int(round(100 * (1-sima.score))))%</span>&nbsp;</div>
+                    <div><a href = "/article/$(fixid(sima.id))">$(sima.title)</a></div>
+                </div>
+            <% end %>
+        </div>
+        <!--
+        <div id = "queries">
+            <h2>queries used to find this paper</h2>
+
+        </div>
+        -->
+
     </div>
 </div>
 
