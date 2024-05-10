@@ -23,3 +23,4 @@ category,request,retrieval,generative,from,to,rag
 "science","are there any scientific evidence for the flat Earth?","","phi-3-mini","","","RAG"
 "science","are there any habitable planets except Earth in our universe?","","phi-3-mini","","",""
 "science","is universe expanding?","","phi-3-mini","","",""
+"science","which countries produce the largest scientific output in terms of the numer of publications?","","phi-3-mini",1974,2000,"RAG"
