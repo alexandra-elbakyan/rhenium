@@ -18,7 +18,7 @@ def answer(tokenizer, model, question):
     inputs = tokenizer(question, return_tensors = "pt", return_attention_mask = False)
     if cuda.is_available():
         inputs = inputs.to("cuda")
-    generation_kwargs = dict(inputs, streamer = streamer, max_new_tokens = 8192)
+    generation_kwargs = dict(inputs, streamer = streamer, max_new_tokens = 1024)
     thread = Thread(target = model.generate, kwargs = generation_kwargs)
     thread.start()
     return streamer
