@@ -34,7 +34,8 @@
 		.result .score {font-size: 10px; margin-top: 12px; color: #aaa}
 		.result .i {display:table-cell; text-align: rihgt; padding-right: 12px; vertical-align: top; font-weight: bold; font-size: 24px; color: #aaa}
 
-		#answer {align-self: center; margin-top: 16px; font-family: monospace; font-size: 14px; padding: 16px; border: dashed 2px #ccc; border-radius: 8px; display: none; text-align: justify;max-height: 256px;overflow-y: scroll;}
+		#answer {align-self: center; margin-top: 16px; font-family: monospace; font-size: 14px; padding: 16px; border: dashed 2px #ccc; border-radius: 8px; text-align: justify;max-height: 256px;overflow-y: scroll;}
+		#answer img {height:14px; width:auto}
 
 		#settings {position: fixed; height: 100%; background: #aaa; width: 192px; color: black; margin: 0 2% 0 0;}
 		#settings div {margin: 8px 24px 0 24px;}
@@ -152,14 +153,16 @@
 								formatted = formatted.substring(0, formatted.length - 4) + ' ';
 							}
 						}
+						if (!answered) {
+							formatted += '&nbsp;<img src = "/img/flicker.gif"></p>';
+						}
 						diva.innerHTML = 'answer by <b>$(jmodel)</' + "b>: " + formatted;
 						diva.style.display = 'block';
 						termins = ['.', '"', ']'];
 						if (!answered) {
-							diva.insertAdjacentHTML("beforeend", '&nbsp;<img src = "/img/flicker.gif" style = "height:14px;width:auto"></p>');
 							setTimeout(answer, 128);
 						}
-						else if (!termins.include(formatted.trim().slice(-1))) {
+						else if (!termins.include(response.join(" ").trim().slice(-1))) {
 							diva.insertAdjacentHTML("beforeend", '... (output truncated)');
 						}
 					}
@@ -169,7 +172,6 @@
 		}
 
 		function ask() {
-			answer();
 			var xmlhttp = new XMLHttpRequest();
 			xmlhttp.open('GET', '/ask/' + '$(request)', true);
 			xmlhttp.onreadystatechange = function() {
@@ -180,6 +182,7 @@
 				}
 			};
 			xmlhttp.send(null);
+			answer();
 		}
 
 		function setmodel(mi) {
@@ -378,7 +381,9 @@
 					embedding model: $(imodel)<br>
 					retrieval took $(round(time, digits = 4)) sec.
 					</div>
-					<div id = "answer"></div>
+					<% if last(query) == '?' %>
+						<div id = "answer">answer by <b>$(jmodel)</b>: <img src = "/img/flicker.gif"></div>
+					<% end %>
 				</div>
 				<div id = "pager">
 					<a onclick = "select(this)" href = "#:1" id = "to:1">1</a>
