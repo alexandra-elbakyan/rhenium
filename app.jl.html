@@ -92,7 +92,10 @@
 			if (yfr != '1965' || yto != '2024') {
 				dates = [yfr, yto];
 			}
-			var url = '/' + retrieval + ',' + generative;
+			var url = '/' + retrieval;
+			if (generative.length > 0) {
+				url += ',' + generative;
+			}
 			var sources = [];
 			var boxes = document.getElementsByName('sources');
 			boxes.forEach(function(b){
@@ -351,11 +354,18 @@
 
 		<div class = "section">
 			<span>databases</span>
-			<br>
-			<%  for_each(keys(sources)) do source
-					checked = sources[source] > 0 ? "checked = checked" : "" ;
-					"<span><input type = \"checkbox\" id = \"source:" * source * "\" value = \"" * source * "\" name = \"sources\" " * checked * " /><label for = \"source:" * source * "\">" * source * "</label></span>"
-				end %>
+			<div style = "margin: 4px 0 0 0;">
+				<%  for_each(keys(sources)) do source 
+						checked = sources[source] > 0 ? "checked = \"checked\"" : "" ;
+				%>
+						<div style = "white-space: nowrap; display: inline; font-size: 12px; margin: 0 0 0 4px;">
+							<%
+							    "<input type = \"checkbox\" id = \"source:" * source * "\" value = \"" * source * "\" name = \"sources\"  " * checked * " />"
+							%>
+							<label for = "source:$(source)">$(source)</label>
+						</div>
+				<% end %>
+			</div>
 		</div>
 
 		<div class = "section">
