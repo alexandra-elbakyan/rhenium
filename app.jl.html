@@ -434,11 +434,15 @@
 					function wordtrim(abstract, n = 64)
 						words = split(abstract, " ")
 						if length(words) > n
-							return join(words[1:n], " ") * "..."
+							join(words[1:n], " ") * "..."
+						else
+							abstract
 						end
-						abstract
-						end
-				i = i + 1
+					end
+					function fixid(id)
+						replace(id, "/" => "--")
+					end
+					i = i + 1
 				%>
 					<div class = "result">
 						<span class = "i">
@@ -446,7 +450,7 @@
 						</span>
 						<span>
 							<span class = "author">$(result.authors)</span>
-							<a target = "_blank" href = "/article/$(result.id)">$(result.title)</a> ($(result.year))
+							<a target = "_blank" href = "/article/$(fixid(result.id))">$(result.title)</a> ($(result.year))
 							<p>$(wordtrim(result.abstract))</p>
 						</span>
 					</div>

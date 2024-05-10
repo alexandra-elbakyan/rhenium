@@ -243,7 +243,7 @@ end
 
 
 route("/article/:id", method = GET) do
-    ai = article(payload(:id))
+    ai = article(replace(payload(:id), "--" => "/"))
     ai = (; ai..., url    = sources[ai.source].url * ai.id,
                    source = sources[ai.source].name)
 
