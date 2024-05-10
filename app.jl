@@ -84,11 +84,12 @@ function ask(question, model; context = "", prefix = ":")
         Jedis.execute(["zadd", pool, Base.time(), "<|startup|>"], memory)
         if haskey(model, :format)
             formatted = replace(model.format, "{question}" => question)
-            if length(context) > 0
-                formatted = replace(formatted, "{context}" => context)
-            end
+            formatted = replace(formatted, "{context}" => context)
         else
             formatted = question
+            if length(context) > 0
+                formatted = "Please answer the question using the following contextual information:\n\n" * context * "\n\nQuestion:" * question
+            end
         end   
         streamer = transformer.answer(model.tokenizer, model.transformer, formatted)
         i = 1
@@ -144,7 +145,7 @@ function parseque(model, query)
     israg = Dict("RAG" => true, "answer" => false)
     for ra in keys(israg)
         if occursin("[" * ra * "]", query)
-            query = replace(query, "[" * ra * "]" => '?')
+            query = strip(replace(query, "[" * ra * "]" => '?'))
             RAG = israg[ra]
         end
     end
