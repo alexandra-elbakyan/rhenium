@@ -391,7 +391,7 @@
 							url = "/" * re
 							if length(String(jmodel)) > 0
 								ge = hitmiss(example.generative, jmodel)
-								if haskey(answering, Symbol(ge))
+								if haskey(generative, Symbol(ge))
 									url *= "," * ge
 								end
 							end
