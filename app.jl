@@ -145,7 +145,7 @@ function parseque(model, query)
     israg = Dict("RAG" => true, "answer" => false)
     for ra in keys(israg)
         if occursin("[" * ra * "]", query)
-            query = strip(replace(query, "[" * ra * "]" => '?'))
+            query = replace(replace(query, "[" * ra * "]" => '?'), " ?" => '?')
             RAG = israg[ra]
         end
     end
