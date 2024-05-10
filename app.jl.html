@@ -71,6 +71,8 @@
 		div.examples span {color:#bbb}
 		div.examples a {font-size: 14px; white-space: nowrap;}
 
+		#total {font-size: 16px; color:olive; font-weight: bold;}
+
 	</style>
 
 
@@ -80,13 +82,16 @@
 		var generative = '$(jmodel)';
 
 		function prepare() {
+			var query = document.getElementById('query').value.trim();
+			if (query == '') {
+				return null;
+			}
 			var dates = [];
 			var yfr = document.getElementById('year:from').value;
 			var yto = document.getElementById('year:to').value;
-			if (yfr != '1974' || yto != '2024') {
+			if (yfr != '1965' || yto != '2024') {
 				dates = [yfr, yto];
 			}
-			var query = document.getElementById('query').value;
 			var url = '/' + retrieval + ',' + generative;
 			var sources = [];
 			var boxes = document.getElementsByName('sources');
@@ -101,7 +106,7 @@
 				url += '[' + sources.join(',') + ']';
 			}
 			RAG = ['answer', 'RAG'][+document.getElementById('RAG').checked];
-			url += '/' + query.replace('?', '[' + RAG + ']');
+			url += '/' + query.replace('?', ' [' + RAG + ']');
 			if (dates.length > 0) {
 				url += ' [' + dates.join('-') + ']';
 			}
@@ -110,7 +115,10 @@
 
 
 		function search() {
-			window.location.href = prepare();
+			var url = prepare();
+			if (url != null) {
+				window.location.href = url;
+			}
 			return false;
 		};
 
@@ -292,7 +300,7 @@
 			query = '$(query)';
 			if (query.length > 0) {
 				window.addEventListener("scroll", handleInfiniteScroll);
-				if (query.slice(-1) == '?') {
+				if ((query.slice(-1) == '?') && (generative != '')) {
 					ask();
 				}
 				pages.push(document.getElementById(":1"));
@@ -335,7 +343,10 @@
 		<div class = "section">
 			<span>published in</span>
 			<br>
-			<input value = "$(dates[1])" id = "year:from" class = "year"> - <input value = "$(dates[2])" id = "year:to" class = "year">
+			<form method = "POST" action = "/" onsubmit = "return search();">
+				<input value = "$(dates[1])" id = "year:from" class = "year"> - <input value = "$(dates[2])" id = "year:to" class = "year">
+				<input type = "submit" hidden />
+			</form>
 		</div>
 
 		<div class = "section">
@@ -364,7 +375,7 @@
 			<span id = "logo">search</span>
 		
 			<div id="form">
-				<form method = "POST" action = "/" onsubmit = "return search('$(imodel)');">
+				<form method = "POST" action = "/" onsubmit = "return search();">
 					<input name = "query" id = "query" value = "$(query)" autofocus placeholder="enter search query" />
 					<input type = "button" value = "→" onclick = "search()">
 				</form>
@@ -375,7 +386,7 @@
 		<% if (isempty(query))  %>
 		<div id = "main">
 			<h1>Welcome to REsearch engine!</h1>
-			<div>The engine allows for semantic search among $(total) scientific papers.<br>
+			<div>The engine allows for semantic search among <span id = "total">$(total)</span> scientific papers.<br>
 				 Here are some example queries to get started:
 			</div>
 			<div>
@@ -419,7 +430,7 @@
 					embedding model: $(imodel)<br>
 					retrieval took $(round(time, digits = 4)) sec.
 					</div>
-					<% if last(query) == '?' %>
+					<% if (last(query) == '?') && (length(generative) > 0) %>
 						<div id = "answer">answer by <b>$(jmodel)</b>: <img src = "/img/flicker.gif"></div>
 					<% end %>
 				</div>

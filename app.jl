@@ -8,6 +8,7 @@ using Genie.Requests
 using LibPQ, Jedis
 using DataFrames, Tables
 using SQLStrings
+using Format
 using JSON3
 using CSV
 
@@ -29,9 +30,6 @@ println("done.")
 
 sources = config.sources
 
-timespan = [1974, 2024]
-n = 0
-
 println("loading retrieval models:")
 retrieval = Dict()
 for mi in keys(config.retrieval)
@@ -44,8 +42,8 @@ for mi in keys(config.retrieval)
         ii = (; ii..., redis = Jedis.Client(host = ii.host))
         if haskey(ii, :pass)
             Jedis.auth(ii.pass, client = ii.redis)
-            n = Jedis.execute(["ft.info", "word2vec"], ii.redis)[10]
         end
+        ii = (; ii..., n = Jedis.execute(["dbsize"], ii.redis))
         ii = (; ii..., id = "word2vec")
     else
         ii = (; ii..., encoder = transformer.sentence(ii.path))
@@ -56,6 +54,9 @@ for mi in keys(config.retrieval)
 end
 println("done!")
 
+timespan = [1965, 2024]
+
+n = retrieval[:word2vec].n
 println("articles indexed: " * string(n))
 
 println("loading generative models:")
@@ -196,7 +197,7 @@ route("/", method = GET) do
    html(path"app.jl.html", results = "", count = 0, query = "", N = n,
                            imodel = imodel, jmodel = jmodel, examples = groups,
                            retrieval = retrieval, generative = answering, RAG = true,
-                           sources = selection, dates = timespan, total = 11001479)
+                           sources = selection, dates = timespan, total = cfmt("%\'d", n))
 end
 
 
