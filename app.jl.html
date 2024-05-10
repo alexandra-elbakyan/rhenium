@@ -65,6 +65,12 @@
 			white-space: -o-pre-wrap;    /* Opera 7 */
 			word-wrap: break-word;       /* Internet Explorer 5.5+ */
 		}
+
+		div.examples {margin-top: 18px}
+		div.examples h2 {margin: 22px 0 8px 0;}
+		div.examples span {color:#bbb}
+		div.examples a {font-size: 14px; white-space: nowrap;}
+
 	</style>
 
 
@@ -178,6 +184,7 @@
 				if (xmlhttp.readyState == 4) {
 					if(xmlhttp.status == 200) {
 						answered = true;
+						setTimeout(answer, 1024);
 					}
 				}
 			};
@@ -282,14 +289,15 @@
 		};
 
 		window.onload = function () {
-			window.addEventListener("scroll", handleInfiniteScroll);
 			query = '$(query)';
-			if (query.slice(-1) == '?') {
-				ask();
+			if (query.length > 0) {
+				window.addEventListener("scroll", handleInfiniteScroll);
+				if (query.slice(-1) == '?') {
+					ask();
+				}
+				pages.push(document.getElementById(":1"));
 			}
-			pages.push(document.getElementById(":1"));
 		};
-
 
 	</script>
 
@@ -367,7 +375,37 @@
 		<% if (isempty(query))  %>
 		<div id = "main">
 			<h1>Welcome to REsearch engine!</h1>
-			<p>number of articles in the index: $(total)</p>
+			<div>The engine allows for semantic search among $(total) scientific papers.<br>
+				 Here are some example queries to get started:
+			</div>
+			<div>
+				<% for_each(keys(examples)) do category %>
+					<div class = "examples">
+					<h2>$(category)</h2>
+						<% for_each(examples[category]) do example
+							hitmiss(hit, miss) = ismissing(hit) || length(hit) == 0 ? string(miss) : string(hit)
+							re = hitmiss(example.retrieval, imodel)
+							if !haskey(retrieval, Symbol(re))
+								re = imodel
+							end
+							url = "/" * re
+							if length(jmodel) > 0
+								ge = hitmiss(example.generative, jmodel)
+								if haskey(answering, Symbol(ge))
+									url *= "," * ge
+								end
+							end
+							url *= "/" * example.request
+							url = replace(url, "?" => " [" * hitmiss(example.rag, "answer") * "]")
+							if !(ismissing(example.from) && ismissing(example.to))
+								url *= " [" * hitmiss(example.from, dates[1]) * "-" * hitmiss(example.to, dates[2]) * "]"
+							end
+						%>
+							<span><a href = "$(url)">$(example.request)</a>&nbsp;•&nbsp;</span>
+						<% end %>
+				   </div>
+				<% end %>
+			</div>
 		</div>
 		<% end %>
 

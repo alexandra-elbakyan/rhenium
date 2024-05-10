@@ -9,6 +9,7 @@ using LibPQ, Jedis
 using DataFrames, Tables
 using SQLStrings
 using JSON3
+using CSV
 
 using PyCall
 pushfirst!(pyimport("sys")."path", "modules")
@@ -183,9 +184,17 @@ end
 
 
 route("/", method = GET) do
+   examples = CSV.File("searches.csv") |> DataFrame
+   categories = Array(unique(examples[!, [:category]]))
+   groups = Dict()
+   for category in categories
+       groups[category] = NamedTuple.(eachrow(examples[in([category]).(examples.category), :]))
+   end
+   imodel = length(retrieval) > 0 ? first(keys(retrieval)) : ""
+   jmodel = length(answering) > 0 ? first(keys(answering)) : ""
    selection = Dict(String.(keys(sources)) .=> ones(length(sources), 1))
    html(path"app.jl.html", results = "", count = 0, query = "", N = n,
-                           imodel = :word2vec, jmodel = length(answering) > 0 ? first(keys(answering)) : "",
+                           imodel = imodel, jmodel = jmodel, examples = groups,
                            retrieval = retrieval, generative = answering, RAG = true,
                            sources = selection, dates = timespan, total = 11001479)
 end
