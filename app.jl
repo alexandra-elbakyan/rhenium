@@ -54,7 +54,7 @@ for mi in keys(config.retrieval)
 end
 println("done!")
 
-timespan = [1965, 2024]
+timespan = [1963, 2024]
 
 n = retrieval[:word2vec].n
 println("articles indexed: " * string(n))
