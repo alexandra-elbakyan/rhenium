@@ -324,13 +324,30 @@
 			<span>general</span>
 			<br>			    
 			<%  for_each(values(retrieval)) do model
-				   selected = model.name == imodel ? "class = 'selected'" : ""
-				   "<button id = \"button:" * String(model.name) * "\" onclick = \"setmodel('" * String(model.name) * "')\" " * selected * ">" * model.id * "</button>"
-			    end %>
+				   selected = model.name == imodel ? "selected" : ""
+				   name = String(model.name)
+				   if (haskey(model, :field))
+			%>
+					<i></i>
+			<% else %>
+				   		<button id = "button:$(name)" onclick = "setmodel('$(name)')" class = "$(selected)">$(model.id)</button>
+			<%  	end
+				end %>
 			</div>
 			
 			<div class = "subsection">
-			<span>specialized</span>
+				<span>special</span>
+				<br>			    
+				<% for_each(values(retrieval)) do model
+					   selected = model.name == imodel ? "selected" : ""
+					   name = String(model.name)
+					   if (!haskey(model, :field))
+				%>
+					<i></i>
+				<% else %>
+							<button id = "button:$(name)" onclick = "setmodel('$(name)')" class = "$(selected)">$(model.id)</button>
+				<%  	end
+					end %>
 			</div>
 		</div>
 		

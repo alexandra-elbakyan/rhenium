@@ -15,6 +15,7 @@ using CSV
 using PyCall
 pushfirst!(pyimport("sys")."path", "modules")
 transformer = pyimport("transformer")
+qdrantsearch = pyimport("qdrantsearch")
 redisearch = pyimport("redisearch")
 
 include("modules/word2vec.jl")
@@ -47,7 +48,9 @@ for mi in keys(config.retrieval)
         ii = (; ii..., id = "word2vec")
     else
         ii = (; ii..., encoder = transformer.sentence(ii.path))
-        ii = (; ii..., id = basename(ii.path))
+        if (!haskey(ii, :id))
+            ii = (; ii..., id = basename(ii.path))
+        end
     end
     retrieval[mi] = ii
     println("[+] " * String(mi))
@@ -73,6 +76,7 @@ for mi in keys(config.answering)
     println("[+] " * String(mi))
 end
 println("done!")
+
 
 
 
@@ -115,7 +119,13 @@ function metadata(results, fields = ["i"])
         push!(fields, "i")
     end
     if length(results) > 0
-        records = DataFrame([(i = parse(Int64, r.i), score = parse(Float32, r.score)) for r in results])
+        records = []
+        for r in results
+            i = typeof(r.i) == String ? parse(Int64, r.i) : r.i
+            score = typeof(r.score) == String ? parse(Float32, r.score) : r.score
+            push!(records, (i = i, score = score))
+        end
+        records = DataFrame(records)
         result = LibPQ.execute(pqsql, "SELECT " * join(fields, ", ") * " FROM articles WHERE i IN (" * join([p.i for p in results], ", ") * ")")
         results = DataFrame(columntable(result))
         results = leftjoin(results, records, on = [:i])
@@ -127,7 +137,8 @@ end
 
 function search(query, model; sources = [], dates = [], start = 0, N = 32)
     vector = model.name == :word2vec ? word2vec.sentence(query, model.redis) : model.encoder.encode(query)
-    results = redisearch.search(vector, model.name, sources, dates, start, N, server = model.hostpass)
+    searchf = haskey(model, :field) ? qdrantsearch.search : redisearch.search
+    results = searchf(vector, lowercase(String(model.name)), sources, dates, start, N, server = model.hostpass)
     metadata(results, ["id", "title", "year", "authors", "abstract", "source"])
 end
 
