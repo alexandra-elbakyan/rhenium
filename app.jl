@@ -176,7 +176,7 @@ function parseque(model, query)
     else
         generator = length(answering) > 0 ? first(keys(answering)) : ""
     end
-    dates = timespan
+    dates = []
     if occursin("[", query)
         query, years = split(query, "[")
         years = tryparse.(Int64, split(chop(years), "-"))
@@ -221,7 +221,7 @@ route("/:model/:query", method = GET) do
         elapsed = @elapsed results = search(query, model, sources = databases, dates = dates)
         html(path"app.jl.html", query = query,         results = results,     count = length(results),    time = elapsed,
                                 imodel = model.name,   retrieval = retrieval, jmodel = generator, generative = answering,
-                                sources = selection, dates = dates, request = original, RAG = RAG)
+                                sources = selection, dates = isempty(dates) ? timespan : dates, request = original, RAG = RAG)
     end
 end
 
