@@ -37,18 +37,19 @@
 		#answer {align-self: center; margin-top: 16px; font-family: monospace; font-size: 14px; padding: 16px; border: dashed 2px #ccc; border-radius: 8px; text-align: justify;max-height: 256px;overflow-y: scroll;}
 		#answer img {height:14px; width:auto}
 
-		#settings {position: fixed; height: 100%; background: #aaa; width: 192px; color: black; margin: 0 2% 0 0;}
+		#settings {position: fixed; height: 100%; background: white; width: 192px; color: black; margin: 0 2% 0 0; border-right: dashed 4px darkslateblue;}
 		#settings div {margin: 8px 24px 0 24px;}
 		#settings div.header {font-size: 24px; color: black; margin-top: 24px}
 		#settings div.header img {max-width: 22%;}
 		#settings span {font-family: monospace; font-size: 12px}
-		#settings button {margin-top: 8px; cursor: pointer; font-family: monospace; font-size: 12px; background: #bbb; padding: 4px; border: solid 1px #aaa; color: #444; border-radius: 4px;}
-		#settings button.selected {background: white; font-weight: bold; cursor: default;}
-		#settings button:hover {background-color: darkcyan; color:white}
-		#settings button:hover.selected {background: white; color:#444}
+		#settings button {margin-top: 8px; cursor: pointer; font-family: monospace; font-size: 12px; background: white; padding: 4px; border: solid 1px #aaa; color: #444; border-radius: 4px;}
+		#settings button.selected {background: greenyellow; font-weight: bold; cursor: default; border-color: greenyellow;}
+		#settings button:hover {background-color: aquamarine; border-color: white;}
+		#settings button:hover.selected {background: greenyellow; color:#444}
 		#settings input[type=checkbox] + label { font-family: monospace }
 		#settings input.year { font-family: monospace; font-size: 12px; width: 32px; text-align: center; }
-		#settings label {cursor: pointer}
+		#settings label {cursor: pointer; padding: 0 4px 0 4px;}
+		#settings label:hover {background: aquamarine; color: black }
 		#settings div.section {margin-top: 22px;}
 		#settings div.subsection {margin: 8px 0 0 0;}
 		#settings div.subsection span {text-decoration:underline; text-decoration-style: dotted;}
@@ -377,9 +378,8 @@
 				%>
 						<div style = "white-space: nowrap; display: inline; font-size: 12px; margin: 0 0 0 4px;">
 							<%
-							    "<input type = \"checkbox\" id = \"source:" * source * "\" value = \"" * source * "\" name = \"sources\"  " * checked * " />"
+							    "<input type = \"checkbox\" id = \"source:" * source * "\" value = \"" * source * "\" name = \"sources\"  " * checked * " /><label for = \"source:" * source * "\">" * source * "</label>"
 							%>
-							<label for = "source:$(source)">$(source)</label>
 						</div>
 				<% end %>
 			</div>
