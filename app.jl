@@ -69,7 +69,8 @@ for mi in keys(config.answering)
     if (haskey(ii, :enabled) && !ii.enabled)
         continue
     end
-    tk, tf = transformer.generator(ii.path)
+    quantize = haskey(ii, :quantize) ? ii.quantize : nothing
+    tk, tf = transformer.generator(ii.path, quantize = quantize)
     ii = (; ii..., tokenizer = tk, transformer = tf)
     ii = (; ii..., id = basename(ii.path))
     answering[mi] = ii
@@ -260,12 +261,17 @@ route("/article/:id", method = GET) do
     ai = (; ai..., url    = sources[ai.source].url * ai.id,
                    source = sources[ai.source].name)
 
-    model = first(values(retrieval))
-    similar = redisearch.similar(ai.i, model.name, server = model.hostpass)
-    similar = metadata(similar, ["id", "title", "year"])
-    similar = similar[2:length(similar)]
+    for model in values(retrieval)
+        if !haskey(model, :field)
+            similar = redisearch.similar(ai.i, model.name, server = model.hostpass)
+            similar = metadata(similar, ["id", "title", "year"])
+            similar = similar[2:length(similar)]
+            
+            return html(path"art.jl.html", article = ai, similar = similar)
+        end
+    end
     
-    html(path"art.jl.html", article = ai, similar = similar)
+
 end
 
 

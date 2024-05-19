@@ -1,14 +1,16 @@
 from torch import cuda
-from transformers import AutoTokenizer, AutoModelForCausalLM, TextIteratorStreamer
+from transformers import AutoTokenizer, AutoModelForCausalLM, TextIteratorStreamer, QuantoConfig
 from sentence_transformers import SentenceTransformer
 from threading import Thread
 
 def sentence(path):
     return SentenceTransformer(path, trust_remote_code = True, device = ["cpu", "cuda"][cuda.is_available()])
 
-def generator(path):
+def generator(path, quantize = None):
+    if quantize:
+        quantize = QuantoConfig(**quantize)
     tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code = True)
-    model = AutoModelForCausalLM.from_pretrained(path, trust_remote_code = True)
+    model = AutoModelForCausalLM.from_pretrained(path, quantization_config = quantize, trust_remote_code = True)
     if cuda.is_available():
         model = model.to("cuda")
     return tokenizer, model
