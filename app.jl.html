@@ -263,7 +263,7 @@
 
 			pages.forEach(pageScrolledIntoView);
 
-			const endOfPage = window.innerHeight + window.pageYOffset >= document.body.offsetHeight;
+			const endOfPage = window.innerHeight + window.pageYOffset >= document.body.offsetHeight * 0.9;
 			if (endOfPage && !loading) {
 				loading = true;
 				document.getElementById("loading").style.display = 'block';
