@@ -70,7 +70,7 @@ for mi in keys(config.answering)
         continue
     end
     quantize = haskey(ii, :quantize) ? ii.quantize : nothing
-    tk, tf = transformer.generator(ii.path, quantize = quantize)
+    tk, tf = transformer.generator(ii.path, quanti = quantize)
     ii = (; ii..., tokenizer = tk, transformer = tf)
     ii = (; ii..., id = basename(ii.path))
     answering[mi] = ii
