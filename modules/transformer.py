@@ -9,7 +9,7 @@ def sentence(path):
 
 def generator(path, quanti = None):
     tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code = True)
-    model = AutoModelForCausalLM.from_pretrained(path, quantization_config = quantize, trust_remote_code = True)
+    model = AutoModelForCausalLM.from_pretrained(path, trust_remote_code = True)
     if quanti:
         quantize(model.transformer, weights = qint8, activations = qint8)
         freeze(model)
