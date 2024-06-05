@@ -1,6 +1,5 @@
-from torch import cuda
-from transformers import AutoTokenizer, AutoModelForCausalLM, TextIteratorStreamer
-from quanto import freeze, quantize, qint8
+from torch import cuda, bfloat16
+from transformers import AutoTokenizer, AutoModelForCausalLM, TextIteratorStreamer, BitsAndBytesConfig
 from sentence_transformers import SentenceTransformer
 from threading import Thread
 
@@ -8,11 +7,15 @@ def sentence(path):
     return SentenceTransformer(path, trust_remote_code = True, device = ["cpu", "cuda"][cuda.is_available()])
 
 def generator(path, quanti = None):
-    tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code = True)
-    model = AutoModelForCausalLM.from_pretrained(path, trust_remote_code = True)
     if quanti:
-        quantize(model, weights = qint8, activations = qint8)
-        freeze(model)
+       quanti = BitsAndBytesConfig(
+                    load_in_4bit = True,
+                    bnb_4bit_quant_type = "nf4",
+                    bnb_4bit_use_double_quant = True,
+                    bnb_4bit_compute_dtype = bfloat16
+                 )
+    tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code = True)
+    model = AutoModelForCausalLM.from_pretrained(path, trust_remote_code = True, quantization_config = quanti)
     if cuda.is_available():
         model = model.to("cuda")
     return tokenizer, model
