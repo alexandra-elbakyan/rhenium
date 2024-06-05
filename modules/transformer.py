@@ -11,7 +11,7 @@ def generator(path, quanti = None):
     tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code = True)
     model = AutoModelForCausalLM.from_pretrained(path, trust_remote_code = True)
     if quanti:
-        quantize(model.transformer, weights = qint8, activations = qint8)
+        quantize(model, weights = qint8, activations = qint8)
         freeze(model)
     if cuda.is_available():
         model = model.to("cuda")
