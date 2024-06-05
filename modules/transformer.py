@@ -14,10 +14,9 @@ def generator(path, quanti = None):
                     bnb_4bit_use_double_quant = True,
                     bnb_4bit_compute_dtype = bfloat16
                  )
+    devices = "cuda" if cuda.is_available() else "auto"
     tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code = True)
-    model = AutoModelForCausalLM.from_pretrained(path, trust_remote_code = True, quantization_config = quanti)
-    if cuda.is_available():
-        model = model.to("cuda")
+    model = AutoModelForCausalLM.from_pretrained(path, device_map = devices, trust_remote_code = True, quantization_config = quanti)
     return tokenizer, model
 
 def answer(tokenizer, model, question):
